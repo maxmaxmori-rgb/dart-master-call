@@ -1,0 +1,9 @@
+{
+  "name": "Dart Master Call v2",
+  "short_name": "Dart Call",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050814",
+  "theme_color": "#050814",
+  "icons": []
+}
