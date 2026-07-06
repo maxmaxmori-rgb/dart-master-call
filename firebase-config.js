@@ -2,7 +2,7 @@
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
-const firebaseConfig = {
+window.firebaseConfig = {
   apiKey: "AIzaSyCkuzUnIG5719y59GRStCYsdOvd1GtnOZo",
   authDomain: "dart-master-call.firebaseapp.com",
   databaseURL: "https://dart-master-call-default-rtdb.europe-west1.firebasedatabase.app",
