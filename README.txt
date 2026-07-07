@@ -1,23 +1,23 @@
-DART MASTER CALL v2
+DART MASTER CALL v3.0
 
 Novità:
-- Massimo 6 pedane.
-- Vista tablet/TV con tutte le pedane.
-- Stati: Libera, Chiamata, In gioco.
-- Pulsanti telefono: Assegna + Chiama, Chiama, Richiama, In gioco, Fine.
-- Chiamata a schermo intero sul tablet con suono.
-- Ritorno automatico alla panoramica dopo 10/15/20/30 secondi.
+- 6 pedane con Organizzatore e Display TV/Tablet.
+- 3 viste TV: Pedane, Tabellone, Mista.
+- Suono chiamata più forte: 3 sequenze sonore.
+- Aggiunta, modifica ed eliminazione giocatori.
+- Import lista giocatori da testo.
+- Sorteggio casuale.
+- Tabellone dinamico 8/16/32/64/128.
+- Doppia eliminazione base ispirata al tabellone FIGeST caricato.
 
-Come usarla:
-1) Configura Firebase nel file firebase-config.js.
-2) Pubblica i file su GitHub Pages, Netlify o Firebase Hosting.
-3) Apri l'app sul telefono e premi “Telefono”.
-4) Apri l'app sul tablet Samsung e premi “Tablet/TV”.
-5) Usa lo stesso codice torneo su entrambi, esempio BARMAGIC.
+Installazione:
+1. Sostituisci su GitHub:
+   index.html, firebase-config.js, manifest.webmanifest, README.txt
+2. Nel file firebase-config.js incolla la tua configurazione Firebase usando:
+   window.firebaseConfig = { ... }
+3. Apri il sito e premi Collega.
 
-Link rapido tablet:
-- aggiungi #display alla fine del link, esempio:
-  https://tuosito.it/dart-master-call/index.html#display
-
-Nota:
-Il suono sul tablet parte dopo la prima interazione con lo schermo, per regole dei browser.
+Link display:
+?mode=mixed#display
+?mode=boards#display
+?mode=bracket#display
