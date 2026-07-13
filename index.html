@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Dart Master Call v3.7</title>
+<title>Dart Master Call v3.8</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#050814">
 <style>
@@ -34,7 +34,7 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 </style>
 </head>
 <body>
-<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.7</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
+<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.8</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
 <main id="admin">
 <div class="card"><b>Collegamento torneo</b><label>Codice torneo</label><input id="room" value="BARMAGIC" oninput="saveRoom()"><button class="blue" onclick="connectRoom()">Collega</button><span id="conn" class="small">Non collegato</span></div>
 <div class="nav"><button id="tabDashboard" class="active" onclick="setTab('dashboard')">Dashboard</button><button id="tabPlayers" onclick="setTab('players')">Giocatori</button><button id="tabBracket" onclick="setTab('bracket')">Tabellone</button><button id="tabBoards" onclick="setTab('boards')">Pedane</button></div>
@@ -51,7 +51,39 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/fireba
 const $=id=>document.getElementById(id);let app,db,roomRef,state=defaultState(),tab="dashboard",displayMode=localStorage.getItem("dmc_displayMode")||"mixed",lastCallTs=0,audioCtx,overlayTimer;
 function defaultBoards(){return Array.from({length:6},(_,i)=>({id:i+1,status:"free",p1:"",p2:"",matchKey:null,calledAt:0,playingAt:0}))}
 function defaultState(){return {players:[],boardCount:6,callSeconds:15,displayMode:"mixed",boards:defaultBoards(),lastCall:null,bracketSize:16,bracketType:"double",bracket:null}}
-function norm(s){s=s||defaultState();s.players=s.players||[];s.boards=s.boards||defaultBoards();while(s.boards.length<6)s.boards.push({id:s.boards.length+1,status:"free",p1:"",p2:"",matchKey:null});s.boardCount=+s.boardCount||6;s.callSeconds=+s.callSeconds||15;s.displayMode=s.displayMode||"mixed";s.bracketSize=+s.bracketSize||16;s.bracketType=s.bracketType||"double";return s}
+function hydrateBracket(b){
+  if(!b||!b.matches)return b;
+
+  // Firebase salva winnerRounds/loserRounds come copie separate.
+  // Qui le ricolleghiamo sempre agli oggetti canonici dentro matches.
+  const relinkRound=round=>(round||[]).map(item=>{
+    const key=typeof item==="string"?item:item?.key;
+    return b.matches[key]||item;
+  });
+
+  b.winnerRounds=(b.winnerRounds||[]).map(relinkRound);
+  b.loserRounds=(b.loserRounds||[]).map(relinkRound);
+
+  if(b.final){
+    const finalKey=typeof b.final==="string"?b.final:b.final.key;
+    b.final=b.matches[finalKey]||b.final;
+  }
+
+  return b;
+}
+function norm(s){
+  s=s||defaultState();
+  s.players=s.players||[];
+  s.boards=s.boards||defaultBoards();
+  while(s.boards.length<6)s.boards.push({id:s.boards.length+1,status:"free",p1:"",p2:"",matchKey:null});
+  s.boardCount=+s.boardCount||6;
+  s.callSeconds=+s.callSeconds||15;
+  s.displayMode=s.displayMode||"mixed";
+  s.bracketSize=+s.bracketSize||16;
+  s.bracketType=s.bracketType||"double";
+  s.bracket=hydrateBracket(s.bracket);
+  return s
+}
 $("room").value=localStorage.getItem("dmc_room")||"BARMAGIC";window.saveRoom=()=>localStorage.setItem("dmc_room",$("room").value.trim()||"BARMAGIC");
 window.connectRoom=()=>{try{if(!window.firebaseConfig||!window.firebaseConfig.apiKey||window.firebaseConfig.apiKey.includes("INSERISCI")){$("conn").textContent="⚠️ firebase-config.js non configurato";return}app=app||initializeApp(window.firebaseConfig);db=getDatabase(app);const room=($("room").value.trim()||"BARMAGIC").replace(/[^a-zA-Z0-9_-]/g,"");roomRef=ref(db,"rooms/"+room);onValue(roomRef,snap=>{state=norm(snap.val());displayMode=state.displayMode||displayMode;render()});$("conn").textContent="✅ Collegato"}catch(e){$("conn").textContent="Errore: "+e.message}}
 function push(p){if(!roomRef){alert("Prima premi Collega");return} update(roomRef,p)}function save(){if(!roomRef){alert("Prima premi Collega");return} set(roomRef,state)}
@@ -80,7 +112,7 @@ window.assignMatchToBoard=(matchKey,bi)=>{
   save()
 }
 window.setBracketSize=()=>push({bracketSize:+$("bracketSize").value});window.setBracketType=()=>push({bracketType:$("bracketType").value});window.generateBracket=()=>{
-  state.bracket=makeBracket(state.players,state.bracketSize,state.bracketType);
+  state.bracket=hydrateBracket(makeBracket(state.players,state.bracketSize,state.bracketType));
   if(state.bracket?.type==="double"){
     const checks=[
       ["M13","M20"],["M14","M19"],["M15","M18"],["M16","M17"],
@@ -92,7 +124,7 @@ window.setBracketSize=()=>push({bracketSize:+$("bracketSize").value});window.set
     }
   }
   save()
-};window.resetBracket=()=>{if(confirm("Reset tabellone?")){state.bracket=null;save()}};window.rebuildBracket=()=>{if(confirm("Rigenerare il tabellone mantenendo i giocatori? I risultati verranno cancellati.")){state.bracket=makeBracket(state.players,state.bracketSize,state.bracketType);save()}};window.resetAll=()=>{if(confirm("Reset completo?"))set(roomRef,defaultState())}
+};window.resetBracket=()=>{if(confirm("Reset tabellone?")){state.bracket=null;save()}};window.rebuildBracket=()=>{if(confirm("Rigenerare il tabellone mantenendo i giocatori? I risultati verranno cancellati.")){state.bracket=hydrateBracket(makeBracket(state.players,state.bracketSize,state.bracketType));save()}};window.resetAll=()=>{if(confirm("Reset completo?"))set(roomRef,defaultState())}
 function newMatch(n){return {key:"M"+n,id:String(n),number:n,p1:"",p2:"",winner:null,loser:null,status:"waiting",winTo:null,loseTo:null}}
 function setRoute(m,kind,to,slot){m[kind==="win"?"winTo":"loseTo"]={key:"M"+to,slot}}
 function putPlayer(b,route,player){
