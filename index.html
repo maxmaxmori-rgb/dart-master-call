@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Dart Master Call v3.5</title>
+<title>Dart Master Call v3.6</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#050814">
 <style>
@@ -34,13 +34,13 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 </style>
 </head>
 <body>
-<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.5</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
+<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.6</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
 <main id="admin">
 <div class="card"><b>Collegamento torneo</b><label>Codice torneo</label><input id="room" value="BARMAGIC" oninput="saveRoom()"><button class="blue" onclick="connectRoom()">Collega</button><span id="conn" class="small">Non collegato</span></div>
 <div class="nav"><button id="tabDashboard" class="active" onclick="setTab('dashboard')">Dashboard</button><button id="tabPlayers" onclick="setTab('players')">Giocatori</button><button id="tabBracket" onclick="setTab('bracket')">Tabellone</button><button id="tabBoards" onclick="setTab('boards')">Pedane</button></div>
 <section id="dashboardPanel"><div class="layout"><div class="card"><b>Giocatori</b><div id="playersList"></div><button class="blue" onclick="setTab('players')">Gestisci</button></div><div class="card"><b>Tabellone</b><div id="bracketMini"></div><button class="purple" onclick="setTab('bracket')">Apri tabellone</button></div><div class="card"><b>Pedane</b><div id="boardsMini"></div></div></div></section>
 <section id="playersPanel" class="hidden"><div class="layout"><div class="card"><b>Aggiungi giocatore</b><label>Nome</label><input id="playerName" placeholder="Es. Marco Rossi"><button onclick="addPlayer()">Aggiungi</button><button class="purple" onclick="shufflePlayers()">Sorteggio casuale</button></div><div class="card"><b>Importa lista</b><div class="small">Un giocatore per riga.</div><textarea id="bulkPlayers" placeholder="Marco&#10;Luca&#10;Andrea"></textarea><button class="blue" onclick="importPlayers()">Importa</button></div><div class="card"><b>Lista giocatori</b><div id="playersListFull"></div></div></div></section>
-<section id="bracketPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px;flex:1"><label>Numero giocatori</label><select id="bracketSize" onchange="setBracketSize()"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div><div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div><div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="red" onclick="resetBracket()">Reset</button></div></div></div><div class="card"><b>Tabellone</b><div class="small">Doppio KO 16 corretto sulla sequenza numerata 1–30. Anche un BYE viene inoltrato nel girone perdenti e poi risolto automaticamente.</div><div id="bracketView"></div></div></section>
+<section id="bracketPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px;flex:1"><label>Numero giocatori</label><select id="bracketSize" onchange="setBracketSize()"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div><div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div><div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="purple" onclick="rebuildBracket()">Rigenera mantenendo giocatori</button><button class="red" onclick="resetBracket()">Reset</button></div></div></div><div class="card"><b>Tabellone</b><div class="small">Doppio KO 16 numerato 1–30. Solo i BYE avanzano automaticamente; le partite reali avanzano cliccando manualmente il vincitore.</div><div id="bracketView"></div></div></section>
 <section id="boardsPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px"><label>Numero pedane</label><select id="boardCount" onchange="setBoardCount()"><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option></select></div><div style="min-width:180px"><label>Durata chiamata</label><select id="callSeconds" onchange="setCallSeconds()"><option value="10">10 secondi</option><option value="15" selected>15 secondi</option><option value="20">20 secondi</option><option value="30">30 secondi</option></select></div></div></div><div class="card"><b>Gestione pedane</b><div id="boardsAdmin" class="boards"></div></div></section>
 <div class="card"><button class="red" onclick="resetAll()">Reset completo app</button></div>
 </main>
@@ -65,8 +65,21 @@ window.assignBoard=i=>{const p1=$("bp1_"+i).value,p2=$("bp2_"+i).value;if(!p1||!
 window.callBoard=i=>{const b=state.boards[i];if(!b.p1||!b.p2){alert("Prima assegna i giocatori");return}state.boards[i]={...b,status:"called",calledAt:Date.now()};state.lastCall={...state.boards[i],ts:Date.now()};save()}
 window.playBoard=i=>{state.boards[i]={...state.boards[i],status:"playing",playingAt:Date.now()};save()}
 window.finishBoard=i=>{state.boards[i]={id:i+1,status:"free",p1:"",p2:"",matchKey:null,calledAt:0,playingAt:0};save()}
-window.assignMatchToBoard=(matchKey,bi)=>{const m=findMatch(matchKey);if(!m||!m.p1||!m.p2||m.winner){alert("Partita non assegnabile");return}state.boards[bi]={id:bi+1,p1:m.p1,p2:m.p2,matchKey,status:"called",calledAt:Date.now(),playingAt:0};state.lastCall={...state.boards[bi],ts:Date.now()};m.status="called";save()}
-window.setBracketSize=()=>push({bracketSize:+$("bracketSize").value});window.setBracketType=()=>push({bracketType:$("bracketType").value});window.generateBracket=()=>{state.bracket=makeBracket(state.players,state.bracketSize,state.bracketType);save()};window.resetBracket=()=>{if(confirm("Reset tabellone?")){state.bracket=null;save()}};window.resetAll=()=>{if(confirm("Reset completo?"))set(roomRef,defaultState())}
+window.assignMatchToBoard=(matchKey,bi)=>{
+  let m=findMatch(matchKey);
+  if(!m){alert("Tabellone vecchio o partita non trovata. Premi Rigenera mantenendo giocatori.");return}
+  autoAdvanceByes(state.bracket);
+  m=findMatch(matchKey);
+  if(m.winner){alert("Questa partita è già conclusa.");save();return}
+  if(!m.p1||!m.p2){alert("La partita "+m.number+" non è ancora pronta.");save();return}
+  if(m.p1==="BYE"||m.p2==="BYE"){autoAdvanceByes(state.bracket);save();alert("Il BYE è avanzato automaticamente.");return}
+  if(state.boards[bi]?.status!=="free"){alert("La pedana "+(bi+1)+" non è libera.");return}
+  state.boards[bi]={id:bi+1,p1:m.p1,p2:m.p2,matchKey:m.key,status:"called",calledAt:Date.now(),playingAt:0};
+  state.lastCall={...state.boards[bi],ts:Date.now()};
+  m.status="called";
+  save()
+}
+window.setBracketSize=()=>push({bracketSize:+$("bracketSize").value});window.setBracketType=()=>push({bracketType:$("bracketType").value});window.generateBracket=()=>{state.bracket=makeBracket(state.players,state.bracketSize,state.bracketType);save()};window.resetBracket=()=>{if(confirm("Reset tabellone?")){state.bracket=null;save()}};window.rebuildBracket=()=>{if(confirm("Rigenerare il tabellone mantenendo i giocatori? I risultati verranno cancellati.")){state.bracket=makeBracket(state.players,state.bracketSize,state.bracketType);save()}};window.resetAll=()=>{if(confirm("Reset completo?"))set(roomRef,defaultState())}
 function newMatch(n){return {key:"M"+n,id:String(n),number:n,p1:"",p2:"",winner:null,loser:null,status:"waiting",winTo:null,loseTo:null}}
 function setRoute(m,kind,to,slot){m[kind==="win"?"winTo":"loseTo"]={key:"M"+to,slot}}
 function putPlayer(b,route,player){
@@ -166,11 +179,29 @@ function opt(sel){return `<option value="">Scegli</option>`+state.players.map(p=
 function pill(s){return s==="playing"?`<span class="pill playing">🟢 IN GIOCO</span>`:s==="called"?`<span class="pill called">🟡 CHIAMATA</span>`:`<span class="pill free">⚪ LIBERA</span>`}
 function boardHtml(b,i,compact=false){return `<div class="board"><div class="boardTitle"><span>Pedana ${b.id}</span>${pill(b.status)}</div><div class="matchTitle">${b.status==="free"?"LIBERA":esc(b.p1)+"<br><span class='small'>VS</span><br>"+esc(b.p2)}</div>${compact?"":`<label>Giocatore 1</label><select id="bp1_${i}">${opt(b.p1)}</select><label>Giocatore 2</label><select id="bp2_${i}">${opt(b.p2)}</select><div class="row"><button class="blue" onclick="assignBoard(${i})">Assegna + Chiama</button><button onclick="callBoard(${i})">🔔 Chiama</button><button class="secondary" onclick="callBoard(${i})">🔁 Richiama</button><button class="green" onclick="playBoard(${i})">▶ In gioco</button><button class="red" onclick="finishBoard(${i})">✅ Fine</button></div>`}</div>`}
 function renderBoards(){const boards=state.boards.slice(0,state.boardCount);$("boardsAdmin").innerHTML=boards.map((b,i)=>boardHtml(b,i)).join("");$("boardsMini").innerHTML=boards.map((b,i)=>boardHtml(b,i,true)).join("")}
-function freeBoardButtons(matchKey){const free=state.boards.slice(0,state.boardCount).map((b,i)=>b.status==="free"?`<button onclick="assignMatchToBoard('${matchKey}',${i})">Ped. ${i+1}</button>`:"").join("");return free?`<div class="assignMini"><span class="small">Assegna:</span>${free}</div>`:"<div class='small'>Nessuna pedana libera</div>"}
-function renderBracket(){const html=bracketHtml(state.bracket,false);$("bracketView").innerHTML=html;$("bracketMini").innerHTML=state.bracket?`<div class="small">Tabellone ${state.bracket.size} · ${state.bracket.type==="double"?"Doppio KO numerato 1–30":"eliminazione diretta"}</div>`:"<div class='small'>Nessun tabellone generato</div>"}
+function freeBoardButtons(matchKey){
+  const m=findMatch(matchKey);
+  if(!m||m.winner||!m.p1||!m.p2||m.p1==="BYE"||m.p2==="BYE")return "";
+  const free=state.boards.slice(0,state.boardCount).map((b,i)=>b.status==="free"?`<button onclick="assignMatchToBoard('${matchKey}',${i})">Ped. ${i+1}</button>`:"").join("");
+  return free?`<div class="assignMini"><span class="small">Assegna partita ${m.number}:</span>${free}</div>`:"<div class='small'>Nessuna pedana libera</div>"
+}
+function renderBracket(){
+  if(state.bracket && (!state.bracket.matches || !state.bracket.matches.M1)){
+    $("bracketView").innerHTML=`<div class="card" style="border-color:var(--gold)"><b>⚠️ Tabellone vecchio</b><div class="small">Premi “Rigenera mantenendo giocatori” per usare la nuova sequenza.</div><button class="purple" onclick="rebuildBracket()">Rigenera mantenendo giocatori</button></div>`;
+    $("bracketMini").innerHTML="<div class='small'>⚠️ Tabellone da rigenerare</div>";
+    return;
+  }
+  const html=bracketHtml(state.bracket,false);
+  $("bracketView").innerHTML=html;
+  $("bracketMini").innerHTML=state.bracket?`<div class="small">Tabellone ${state.bracket.size} · ${state.bracket.type==="double"?"Doppio KO numerato 1–30":"eliminazione diretta"}</div>`:"<div class='small'>Nessun tabellone generato</div>"
+}
 function bracketHtml(b,tv){if(!b)return "<div class='small'>Genera il tabellone per visualizzarlo.</div>";let out=`<div class="bracketWrap"><div class="bracket">`;b.winnerRounds.forEach((r,ri)=>{out+=`<div class="round"><h3>🏆 Vincenti</h3>`+r.map((m,mi)=>matchSlot("W",ri,mi,m,tv)).join("")+`</div>`});if(b.type==="double")b.loserRounds.forEach((r,ri)=>{out+=`<div class="round"><h3 class="loserTitle">Perdenti</h3>`+r.map((m,mi)=>matchSlot("L",ri,mi,m,tv)).join("")+`</div>`});out+=`<div class="round"><h3>FINALE</h3><div class="slot ${b.final.status}"><b>Partita 30</b><div class="p" onclick="pickFinal('${escAttr(b.final.p1)}')">${esc(b.final.p1||"---")}</div><div class="p" onclick="pickFinal('${escAttr(b.final.p2)}')">${esc(b.final.p2||"---")}</div><div class="small">${b.champion?"🏆 "+esc(b.champion):b.final.status==="ready"?"⏳ pronta":"in attesa"}</div>${!tv&&b.final.status==="ready"&&!b.final.winner?freeBoardButtons(b.final.key):""}</div></div>`;return out+"</div></div>"}
 function matchSlot(side,ri,mi,m,tv){return `<div class="slot ${m.status}"><b>Partita ${esc(m.id)}</b><div class="p" onclick="pickWinner('${side}',${ri},${mi},'${escAttr(m.p1)}')">${esc(m.p1||"---")}</div><div class="p" onclick="pickWinner('${side}',${ri},${mi},'${escAttr(m.p2)}')">${esc(m.p2||"---")}</div><div class="small">${m.winner?"✅ "+esc(m.winner):m.status==="ready"?"⏳ pronta":m.status==="called"?"🟡 chiamata":"in attesa"}</div>${!tv&&m.status==="ready"&&!m.winner?freeBoardButtons(m.key):""}</div>`}
-function nextReady(){if(!state.bracket)return null;return Object.values(state.bracket.matches).sort((a,b)=>a.number-b.number).find(m=>(m.status==="ready"||m.status==="called")&&!m.winner)||null}
+function nextReady(){
+  if(!state.bracket||!state.bracket.matches)return null;
+  autoAdvanceByes(state.bracket);
+  return Object.values(state.bracket.matches).sort((a,b)=>a.number-b.number).find(m=>!m.winner&&m.p1&&m.p2&&m.p1!=="BYE"&&m.p2!=="BYE")||null
+}
 function compactBracketTv(){const b=state.bracket;if(!b)return "<div class='small'>Nessun tabellone generato.</div>";const groups=[...b.winnerRounds.map((r,i)=>({name:"V"+(i+1),r})),...b.loserRounds.map((r,i)=>({name:"P"+(i+1),r})),{name:"Finale",r:[b.final]}];return `<div class="tvBracketCompact"><div class="tvBracketGrid">`+groups.map(x=>`<div class="tvRound"><h3>${x.name}</h3>`+x.r.map(m=>`<div class="tvSlot"><b>N° ${esc(m.id)}</b><div class="tvP">${esc(m.p1||"---")}</div><div class="tvP">${esc(m.p2||"---")}</div><div class="small">${m.winner?"✅ "+esc(m.winner):m.status==="ready"?"⏳ pronta":"attesa"}</div></div>`).join("")+`</div>`).join("")+`</div></div>`}
 function renderDisplay(){["Boards","Bracket","Mixed"].forEach(x=>{const el=$("tvBtn"+x); if(el) el.classList.toggle("active", displayMode===x.toLowerCase())});const boards=state.boards.slice(0,state.boardCount),playing=boards.filter(b=>b.status==="playing").length,called=boards.filter(b=>b.status==="called").length,free=boards.filter(b=>b.status==="free").length;$("displayStats").innerHTML=`🟢 ${playing} · ⚪ ${free} · 🟡 ${called}`;const next=nextReady();const nextHtml=next?`<div class="nextBox"><b>PROSSIMA PARTITA</b><br>${esc(next.p1)} VS ${esc(next.p2)}</div>`:"";const tvBoards=nextHtml+`<div class="tvBoards">`+boards.map(b=>`<div class="tvTile ${b.status==="called"?"calledState":b.status==="playing"?"playingState":""}"><div class="tvTop"><span>P${b.id}</span><span>${b.status==="playing"?"🟢":b.status==="called"?"🟡":"⚪"}</span></div><div class="tvPlayers">${b.status==="free"?"LIBERA":esc(b.p1)+"<br><span style='font-size:.55em;color:var(--muted)'>VS</span><br>"+esc(b.p2)}</div><div class="tvSub">${b.status==="called"?"PRESENTARSI":b.status==="playing"?"IN GIOCO":"DISPONIBILE"}</div></div>`).join("")+`</div>`;const tvBracket=compactBracketTv();$("displayContent").innerHTML=displayMode==="boards"?tvBoards:displayMode==="bracket"?tvBracket:`<div class="mixedGrid"><div>${tvBracket}</div><div>${tvBoards}</div></div>`}
 function maybeOverlay(){const c=state.lastCall;if(!c||!c.ts||c.ts===lastCallTs)return;lastCallTs=c.ts;showOverlay(c)}
