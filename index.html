@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Dart Master Call v3.4</title>
+<title>Dart Master Call v3.5</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#050814">
 <style>
@@ -34,13 +34,13 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 </style>
 </head>
 <body>
-<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.4</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
+<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.5</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
 <main id="admin">
 <div class="card"><b>Collegamento torneo</b><label>Codice torneo</label><input id="room" value="BARMAGIC" oninput="saveRoom()"><button class="blue" onclick="connectRoom()">Collega</button><span id="conn" class="small">Non collegato</span></div>
 <div class="nav"><button id="tabDashboard" class="active" onclick="setTab('dashboard')">Dashboard</button><button id="tabPlayers" onclick="setTab('players')">Giocatori</button><button id="tabBracket" onclick="setTab('bracket')">Tabellone</button><button id="tabBoards" onclick="setTab('boards')">Pedane</button></div>
 <section id="dashboardPanel"><div class="layout"><div class="card"><b>Giocatori</b><div id="playersList"></div><button class="blue" onclick="setTab('players')">Gestisci</button></div><div class="card"><b>Tabellone</b><div id="bracketMini"></div><button class="purple" onclick="setTab('bracket')">Apri tabellone</button></div><div class="card"><b>Pedane</b><div id="boardsMini"></div></div></div></section>
 <section id="playersPanel" class="hidden"><div class="layout"><div class="card"><b>Aggiungi giocatore</b><label>Nome</label><input id="playerName" placeholder="Es. Marco Rossi"><button onclick="addPlayer()">Aggiungi</button><button class="purple" onclick="shufflePlayers()">Sorteggio casuale</button></div><div class="card"><b>Importa lista</b><div class="small">Un giocatore per riga.</div><textarea id="bulkPlayers" placeholder="Marco&#10;Luca&#10;Andrea"></textarea><button class="blue" onclick="importPlayers()">Importa</button></div><div class="card"><b>Lista giocatori</b><div id="playersListFull"></div></div></div></section>
-<section id="bracketPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px;flex:1"><label>Numero giocatori</label><select id="bracketSize" onchange="setBracketSize()"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div><div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div><div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="red" onclick="resetBracket()">Reset</button></div></div></div><div class="card"><b>Tabellone</b><div class="small">Il Doppio KO da 16 segue esattamente l’ordine numerato 1–30 del tabellone FIGeST. I BYE avanzano automaticamente.</div><div id="bracketView"></div></div></section>
+<section id="bracketPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px;flex:1"><label>Numero giocatori</label><select id="bracketSize" onchange="setBracketSize()"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div><div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div><div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="red" onclick="resetBracket()">Reset</button></div></div></div><div class="card"><b>Tabellone</b><div class="small">Doppio KO 16 corretto sulla sequenza numerata 1–30. Anche un BYE viene inoltrato nel girone perdenti e poi risolto automaticamente.</div><div id="bracketView"></div></div></section>
 <section id="boardsPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px"><label>Numero pedane</label><select id="boardCount" onchange="setBoardCount()"><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option></select></div><div style="min-width:180px"><label>Durata chiamata</label><select id="callSeconds" onchange="setCallSeconds()"><option value="10">10 secondi</option><option value="15" selected>15 secondi</option><option value="20">20 secondi</option><option value="30">30 secondi</option></select></div></div></div><div class="card"><b>Gestione pedane</b><div id="boardsAdmin" class="boards"></div></div></section>
 <div class="card"><button class="red" onclick="resetAll()">Reset completo app</button></div>
 </main>
@@ -116,11 +116,11 @@ function makeDouble16(players){
   const routes={
     1:[13,"p1",9,"p1"],2:[13,"p2",9,"p2"],3:[14,"p1",10,"p1"],4:[14,"p2",10,"p2"],
     5:[15,"p1",11,"p1"],6:[15,"p2",11,"p2"],7:[16,"p1",12,"p1"],8:[16,"p2",12,"p2"],
-    9:[17,"p2",null,null],10:[18,"p2",null,null],11:[19,"p2",null,null],12:[20,"p2",null,null],
-    13:[23,"p1",20,"p1"],14:[23,"p2",19,"p1"],15:[24,"p1",18,"p1"],16:[24,"p2",17,"p1"],
+    9:[17,"p1",null,null],10:[18,"p1",null,null],11:[19,"p1",null,null],12:[20,"p1",null,null],
+    13:[23,"p1",17,"p2"],14:[23,"p2",18,"p2"],15:[24,"p1",19,"p2"],16:[24,"p2",20,"p2"],
     17:[21,"p1",null,null],18:[21,"p2",null,null],19:[22,"p1",null,null],20:[22,"p2",null,null],
-    21:[25,"p2",null,null],22:[26,"p2",null,null],23:[28,"p1",25,"p1"],24:[28,"p2",26,"p1"],
-    25:[27,"p1",null,null],26:[27,"p2",null,null],27:[29,"p2",null,null],28:[30,"p1",29,"p1"],29:[30,"p2",null,null]
+    21:[25,"p1",null,null],22:[26,"p1",null,null],23:[28,"p1",25,"p2"],24:[28,"p2",26,"p2"],
+    25:[27,"p1",null,null],26:[27,"p2",null,null],27:[29,"p1",null,null],28:[30,"p1",29,"p2"],29:[30,"p2",null,null]
   };
   Object.entries(routes).forEach(([n,r])=>{setRoute(M(+n),"win",r[0],r[1]);if(r[2])setRoute(M(+n),"lose",r[2],r[3])});
   b.winnerRounds=[[1,2,3,4,5,6,7,8],[13,14,15,16],[23,24],[28]].map(r=>r.map(M));
