@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Dart Master Call v3.11</title>
+<title>Dart Master Call v3.12</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#050814">
 <style>
@@ -31,24 +31,39 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 .tvBracketCompact{overflow:auto;max-height:calc(100vh - 66px);padding-right:3px}.tvBracketGrid{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:6px;min-width:560px}.tvRound h3{font-size:11px;color:var(--gold);margin:0 0 4px}.tvSlot{border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:5px;background:#071026;margin-bottom:5px;font-size:11px}.tvP{font-weight:900;background:#0e1b3a;margin:3px 0;padding:4px;border-radius:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mixedGrid{display:grid;grid-template-columns:1fr;gap:6px}@media(min-width:900px){.mixedGrid{grid-template-columns:1.05fr .95fr}}.nextBox{border:2px solid var(--gold);border-radius:12px;padding:7px;margin-bottom:6px;background:rgba(255,201,40,.08);text-align:center}.nextBox b{color:var(--gold)}
 .overlay{position:fixed;inset:0;background:radial-gradient(circle at 50% 10%,rgba(255,201,40,.32),transparent 32%),linear-gradient(180deg,#07122d,#02040b);display:flex;align-items:center;justify-content:center;text-align:center;padding:18px;z-index:30}.callBox{width:min(1000px,100%);border:4px solid var(--gold);border-radius:26px;padding:22px;background:rgba(4,8,20,.94);animation:flash .75s infinite}@keyframes flash{0%,100%{box-shadow:0 0 45px rgba(255,201,40,.5)}50%{box-shadow:0 0 110px rgba(255,201,40,1);transform:scale(1.012)}}.callTitle{font-size:clamp(38px,7vw,100px);font-weight:1000;color:var(--gold)}.callPlayers{font-size:clamp(34px,8vw,105px);font-weight:1000;line-height:1.02;text-transform:uppercase;margin:14px 0}.callPedana{font-size:clamp(24px,5vw,62px);font-weight:1000}
+
+.queueMatch{border:2px solid rgba(255,201,40,.55);background:#071026;border-radius:14px;padding:10px;margin:8px 0}
+.queueTop{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:1000}
+.queuePlayers{text-align:center;font-size:18px;font-weight:1000;margin:8px 0}
+.queueActions{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.lockedBtn{opacity:.42;filter:grayscale(1);pointer-events:none}
 </style>
 </head>
 <body>
-<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.11</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
+<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.12</span></div><div class="row"><button id="adminModeBtn" class="secondary" onclick="showAdmin()">🔒 Organizzatore</button><button id="tvBoardsBtn" class="secondary tvAccess" onclick="openDisplay('boards')">TV Pedane</button><button id="tvBracketBtn" class="secondary tvAccess" onclick="openDisplay('bracket')">TV Tabellone</button><button id="tvMixedBtn" class="secondary tvAccess" onclick="openDisplay('mixed')">TV Mista</button><button id="unlockBtn" class="purple" onclick="toggleTvLock()">🔐 Sblocca TV</button></div></header>
 <main id="admin">
 <div class="card"><b>Collegamento torneo</b><label>Codice torneo</label><input id="room" value="BARMAGIC" oninput="saveRoom()"><button class="blue" onclick="connectRoom()">Collega</button><span id="conn" class="small">Non collegato</span></div>
 <div class="nav"><button id="tabDashboard" class="active" onclick="setTab('dashboard')">Dashboard</button><button id="tabPlayers" onclick="setTab('players')">Giocatori</button><button id="tabBracket" onclick="setTab('bracket')">Tabellone</button><button id="tabBoards" onclick="setTab('boards')">Pedane</button></div>
 <section id="dashboardPanel"><div class="layout"><div class="card"><b>Giocatori</b><div id="playersList"></div><button class="blue" onclick="setTab('players')">Gestisci</button></div><div class="card"><b>Tabellone</b><div id="bracketMini"></div><button class="purple" onclick="setTab('bracket')">Apri tabellone</button></div><div class="card"><b>Pedane</b><div id="boardsMini"></div></div><div class="card"><b>Classifica eliminati</b><div id="placementsMini"></div></div></div></section>
 <section id="playersPanel" class="hidden"><div class="layout"><div class="card"><b>Aggiungi giocatore</b><label>Nome</label><input id="playerName" placeholder="Es. Marco Rossi"><button onclick="addPlayer()">Aggiungi</button><button class="purple" onclick="shufflePlayers()">Sorteggio casuale</button></div><div class="card"><b>Importa lista</b><div class="small">Un giocatore per riga.</div><textarea id="bulkPlayers" placeholder="Marco&#10;Luca&#10;Andrea"></textarea><button class="blue" onclick="importPlayers()">Importa</button></div><div class="card"><b>Lista giocatori</b><div id="playersListFull"></div></div></div></section>
-<section id="bracketPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px;flex:1"><label>Numero giocatori</label><select id="bracketSize" onchange="setBracketSize()"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div><div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div><div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="purple" onclick="rebuildBracket()">Rigenera mantenendo giocatori</button><button class="red" onclick="resetBracket()">Reset</button></div></div></div><div class="card"><b>Tabellone</b><div class="small">Doppio KO 16 numerato 1–30. Solo i BYE avanzano automaticamente; le partite reali avanzano cliccando manualmente il vincitore.</div><div id="bracketView"></div></div><div class="card"><b>Posizioni finali ed eliminati</b><div id="placementsView"></div></div></section>
+<section id="bracketPanel" class="hidden">
+<div class="card"><div class="row">
+<div style="min-width:160px;flex:1"><label>Numero giocatori</label><select id="bracketSize" onchange="setBracketSize()"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div>
+<div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div>
+<div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="purple" onclick="rebuildBracket()">Rigenera mantenendo giocatori</button><button class="red" onclick="resetBracket()">Reset</button></div>
+</div></div>
+<div class="card"><b>Partite da chiamare</b><div class="small">Solo le partite realmente pronte, in ordine numerico dalla 1 alla 30.</div><div id="callQueueView"></div></div>
+<div class="card"><button class="secondary" onclick="toggleFullBracket()">Mostra/Nascondi tabellone completo</button><div id="fullBracketWrap" class="hidden"><div id="bracketView"></div></div></div>
+<div class="card"><b>Posizioni finali ed eliminati</b><div id="placementsView"></div></div>
+</section>
 <section id="boardsPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px"><label>Numero pedane</label><select id="boardCount" onchange="setBoardCount()"><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option></select></div><div style="min-width:180px"><label>Durata chiamata</label><select id="callSeconds" onchange="setCallSeconds()"><option value="10">10 secondi</option><option value="15" selected>15 secondi</option><option value="20">20 secondi</option><option value="30">30 secondi</option></select></div></div></div><div class="card"><b>Gestione pedane</b><div id="boardsAdmin" class="boards"></div></div></section>
-<div class="card"><button class="red" onclick="resetAll()">Reset completo app</button></div>
+<div class="card"><button class="secondary" onclick="setTvPin()">Cambia PIN TV</button><button class="red" onclick="resetAll()">Reset completo app</button><div class="small">PIN TV iniziale: 1234</div></div>
 </main>
 <section id="display" class="displayScreen hidden"><div class="displayHeader"><div class="displayLogo">🎯 Dart <span>Master</span></div><div><div class="displaySwitch"><button id="tvBtnBoards" class="secondary" onclick="switchDisplay('boards')">Pedane</button><button id="tvBtnBracket" class="secondary" onclick="switchDisplay('bracket')">Tabellone</button><button id="tvBtnMixed" class="secondary" onclick="switchDisplay('mixed')">Mista</button></div><div id="displayStats" class="tvStats"></div></div></div><div id="displayContent"></div><div id="callOverlay" class="overlay hidden"></div></section>
 <script src="firebase-config.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-database.js";
-const $=id=>document.getElementById(id);let app,db,roomRef,state=defaultState(),tab="dashboard",displayMode=localStorage.getItem("dmc_displayMode")||"mixed",lastCallTs=0,audioCtx,overlayTimer;
+const $=id=>document.getElementById(id);let app,db,roomRef,state=defaultState(),tab="dashboard",displayMode=localStorage.getItem("dmc_displayMode")||"mixed",lastCallTs=0,audioCtx,overlayTimer,tvUnlocked=localStorage.getItem("dmc_tvUnlocked")==="1";
 function defaultBoards(){return Array.from({length:6},(_,i)=>({id:i+1,status:"free",p1:"",p2:"",matchKey:null,calledAt:0,playingAt:0}))}
 function defaultState(){return {players:[],boardCount:6,callSeconds:15,displayMode:"mixed",boards:defaultBoards(),lastCall:null,bracketSize:16,bracketType:"double",bracket:null}}
 function hydrateBracket(b){
@@ -107,8 +122,30 @@ window.connectRoom=()=>{try{if(!window.firebaseConfig||!window.firebaseConfig.ap
 }}
 function push(p){if(!roomRef){alert("Prima premi Collega");return} update(roomRef,p)}function save(){if(!roomRef){alert("Prima premi Collega");return} set(roomRef,state)}
 window.setTab=t=>{tab=t;["dashboard","players","bracket","boards"].forEach(x=>{$(x+"Panel").classList.toggle("hidden",x!==t);$("tab"+cap(x)).classList.toggle("active",x===t)});render()};function cap(s){return s[0].toUpperCase()+s.slice(1)}
-window.showAdmin=()=>{$("admin").classList.remove("hidden");$("display").classList.add("hidden");$("topbar").classList.remove("hidden")}
-window.openDisplay=mode=>{switchDisplay(mode);$("admin").classList.add("hidden");$("display").classList.remove("hidden");$("topbar").classList.add("hidden");connectRoom();try{document.documentElement.requestFullscreen?.()}catch(e){}}
+
+function refreshTvLock(){
+  document.querySelectorAll(".tvAccess").forEach(btn=>btn.classList.toggle("lockedBtn",!tvUnlocked));
+  if($("unlockBtn"))$("unlockBtn").textContent=tvUnlocked?"🔓 Blocca TV":"🔐 Sblocca TV";
+  if($("adminModeBtn"))$("adminModeBtn").textContent=tvUnlocked?"Organizzatore":"🔒 Organizzatore";
+}
+window.toggleTvLock=()=>{
+  if(tvUnlocked){tvUnlocked=false;localStorage.setItem("dmc_tvUnlocked","0");refreshTvLock();return}
+  const pin=prompt("Inserisci il PIN per sbloccare le modalità TV:");
+  const saved=localStorage.getItem("dmc_tvPin")||"1234";
+  if(pin===saved){tvUnlocked=true;localStorage.setItem("dmc_tvUnlocked","1");refreshTvLock()}
+  else if(pin!==null)alert("PIN non corretto.");
+};
+window.setTvPin=()=>{
+  const saved=localStorage.getItem("dmc_tvPin")||"1234";
+  const current=prompt("PIN attuale:");
+  if(current!==saved){alert("PIN attuale non corretto.");return}
+  const next=prompt("Nuovo PIN da 4 a 8 cifre:");
+  if(!next||!/^[0-9]{4,8}$/.test(next)){alert("PIN non valido.");return}
+  localStorage.setItem("dmc_tvPin",next);alert("PIN aggiornato.");
+};
+
+window.showAdmin=()=>{tvUnlocked=false;localStorage.setItem("dmc_tvUnlocked","0");$("admin").classList.remove("hidden");$("display").classList.add("hidden");$("topbar").classList.remove("hidden");refreshTvLock()}
+window.openDisplay=mode=>{if(!tvUnlocked){alert("Modalità TV bloccata. Premi Sblocca TV e inserisci il PIN.");return}switchDisplay(mode);$("admin").classList.add("hidden");$("display").classList.remove("hidden");$("topbar").classList.add("hidden");connectRoom();try{document.documentElement.requestFullscreen?.()}catch(e){}}
 window.switchDisplay=mode=>{displayMode=mode;localStorage.setItem("dmc_displayMode",mode);if(roomRef)push({displayMode:mode});renderDisplay()}
 window.addPlayer=()=>{const n=$("playerName").value.trim();if(!n)return;push({players:[...state.players,n]});$("playerName").value=""};window.deletePlayer=i=>{if(confirm("Eliminare giocatore?")){state.players.splice(i,1);save()}};window.editPlayer=i=>{const n=prompt("Modifica nome",state.players[i]);if(n&&n.trim()){state.players[i]=n.trim();save()}};window.importPlayers=()=>{const arr=$("bulkPlayers").value.split(/\n+/).map(x=>x.trim()).filter(Boolean);if(arr.length)push({players:[...state.players,...arr]})};window.shufflePlayers=()=>{
   if(state.players.length<2){alert("Inserisci almeno due giocatori.");return}
@@ -315,7 +352,7 @@ function chooseWinner(matchKey,player){
 window.pickWinner=(side,ri,mi,player)=>{const m=(side==="W"?state.bracket?.winnerRounds:state.bracket?.loserRounds)?.[ri]?.[mi];if(m)chooseWinner(m.key,player)}
 window.pickFinal=player=>chooseWinner(state.bracket?.final?.key,player)
 
-function render(){ $("boardCount").value=state.boardCount;$("callSeconds").value=state.callSeconds;$("bracketSize").value=state.bracketSize;$("bracketType").value=state.bracketType;renderPlayers();renderBoards();renderBracket();renderPlacements();renderDisplay();maybeOverlay() }
+function render(){ $("boardCount").value=state.boardCount;$("callSeconds").value=state.callSeconds;$("bracketSize").value=state.bracketSize;$("bracketType").value=state.bracketType;renderPlayers();renderBoards();renderBracket();renderCallQueue();renderPlacements();renderDisplay();refreshTvLock();maybeOverlay() }
 function renderPlayers(){const list=state.players.map((p,i)=>`<div class="player"><div class="num">${i+1}</div><div onclick="editPlayer(${i})">${esc(p)}</div><button class="deleteBtn" onclick="deletePlayer(${i})">🗑</button></div>`).join("")||"<div class='small'>Nessun giocatore inserito</div>";$("playersList").innerHTML=list;$("playersListFull").innerHTML=list}
 function opt(sel){return `<option value="">Scegli</option>`+state.players.map(p=>`<option ${p===sel?"selected":""}>${esc(p)}</option>`).join("")}
 function pill(s){return s==="playing"?`<span class="pill playing">🟢 IN GIOCO</span>`:s==="called"?`<span class="pill called">🟡 CHIAMATA</span>`:`<span class="pill free">⚪ LIBERA</span>`}
@@ -350,6 +387,27 @@ function nextReady(){
   return Object.values(state.bracket.matches).sort((a,b)=>a.number-b.number).find(m=>!m.winner&&m.p1&&m.p2&&m.p1!=="BYE"&&m.p2!=="BYE")||null
 }
 function compactBracketTv(){const b=state.bracket;if(!b)return "<div class='small'>Nessun tabellone generato.</div>";const groups=[...b.winnerRounds.map((r,i)=>({name:"V"+(i+1),r})),...b.loserRounds.map((r,i)=>({name:"P"+(i+1),r})),{name:"Finale",r:[b.final]}];return `<div class="tvBracketCompact"><div class="tvBracketGrid">`+groups.map(x=>`<div class="tvRound"><h3>${x.name}</h3>`+x.r.map(m=>`<div class="tvSlot"><b>N° ${esc(m.id)}</b><div class="tvP">${esc(m.p1||"---")}</div><div class="tvP">${esc(m.p2||"---")}</div><div class="small">${m.winner?"✅ "+esc(m.winner):m.status==="ready"?"⏳ pronta":"attesa"}</div></div>`).join("")+`</div>`).join("")+`</div></div>`}
+
+function getCallableMatches(){
+  if(!state.bracket||!state.bracket.matches)return [];
+  autoAdvanceByes(state.bracket);
+  return Object.values(state.bracket.matches)
+    .filter(m=>!m.winner&&m.p1&&m.p2&&m.p1!=="BYE"&&m.p2!=="BYE")
+    .sort((a,b)=>a.number-b.number);
+}
+function renderCallQueue(){
+  const box=$("callQueueView");
+  if(!box)return;
+  const matches=getCallableMatches();
+  if(!matches.length){box.innerHTML="<div class='small'>Nessuna partita pronta da chiamare.</div>";return}
+  box.innerHTML=matches.map(m=>{
+    const assigned=state.boards.find(b=>b.matchKey===m.key);
+    const freeButtons=state.boards.slice(0,state.boardCount).map((b,i)=>b.status==="free"?`<button class="blue" onclick="assignMatchToBoard('${m.key}',${i})">Ped. ${i+1}</button>`:"").join("");
+    return `<div class="queueMatch"><div class="queueTop"><span>Partita ${m.number}</span><span>${assigned?`🟡 Pedana ${assigned.id}`:"⏳ Da chiamare"}</span></div><div class="queuePlayers">${esc(m.p1)} <span class="small">VS</span> ${esc(m.p2)}</div><div class="queueActions">${assigned?`<button onclick="callBoard(${assigned.id-1})">🔁 Richiama</button><button class="green" onclick="playBoard(${assigned.id-1})">▶ In gioco</button>`:freeButtons||"<span class='small'>Nessuna pedana libera</span>"}</div></div>`;
+  }).join("");
+}
+window.toggleFullBracket=()=>{const el=$("fullBracketWrap");if(el)el.classList.toggle("hidden")};
+
 function renderPlacements(){
   const b=state.bracket;
   const rows=[...(b?.placements||[])].sort((a,c)=>a.position-c.position||a.at-c.at);
@@ -367,5 +425,5 @@ function maybeOverlay(){const c=state.lastCall;if(!c||!c.ts||c.ts===lastCallTs)r
 function showOverlay(c){clearTimeout(overlayTimer);$("callOverlay").classList.remove("hidden");$("callOverlay").innerHTML=`<div class="callBox"><div class="callTitle">🚨 CHIAMATA</div><div class="callPedana">PEDANA ${esc(c.id)}</div><div class="callPlayers">${esc(c.p1)}<br><span style="font-size:.45em;color:var(--muted)">VS</span><br>${esc(c.p2)}</div><div class="callPedana">PRESENTARSI IN SALA FRECCETTE</div></div>`;strongSound();overlayTimer=setTimeout(()=>$("callOverlay").classList.add("hidden"),state.callSeconds*1000)}
 function strongSound(){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();const now=audioCtx.currentTime;for(let rep=0;rep<3;rep++){[880,660,990].forEach((freq,k)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type="square";o.frequency.value=freq;o.connect(g);g.connect(audioCtx.destination);const t=now+rep*1.05+k*.18;g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(.75,t+.025);g.gain.exponentialRampToValueAtTime(.001,t+.16);o.start(t);o.stop(t+.18)})}}catch(e){}}
 function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}function escAttr(s){return String(s||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/"/g,"&quot;")}
-render();if(location.hash==="#display")openDisplay(new URLSearchParams(location.search).get("mode")||displayMode);
+refreshTvLock();render();if(location.hash==="#display")openDisplay(new URLSearchParams(location.search).get("mode")||displayMode);
 </script></body></html>
