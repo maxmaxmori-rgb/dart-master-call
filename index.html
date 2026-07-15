@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Dart Master Call v3.14</title>
+<title>Dart Master Call v3.15</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#050814">
 <style>
@@ -44,7 +44,7 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 </style>
 </head>
 <body>
-<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.14</span></div><div class="row"><button id="adminModeBtn" class="secondary" onclick="showAdmin()">🔒 Organizzatore</button><button id="tvBoardsBtn" class="secondary tvAccess" onclick="openDisplay('boards')">TV Pedane</button><button id="tvBracketBtn" class="secondary tvAccess" onclick="openDisplay('bracket')">TV Tabellone</button><button id="tvMixedBtn" class="secondary tvAccess" onclick="openDisplay('mixed')">TV Mista</button><button id="unlockBtn" class="purple" onclick="toggleTvLock()">🔐 Sblocca TV</button></div></header>
+<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.15</span></div><div class="row"><button id="adminModeBtn" class="secondary" onclick="showAdmin()">🔒 Organizzatore</button><button id="tvBoardsBtn" class="secondary tvAccess" onclick="openDisplay('boards')">TV Pedane</button><button id="tvBracketBtn" class="secondary tvAccess" onclick="openDisplay('bracket')">TV Tabellone</button><button id="tvMixedBtn" class="secondary tvAccess" onclick="openDisplay('mixed')">TV Mista</button><button id="unlockBtn" class="purple" onclick="toggleTvLock()">🔐 Sblocca TV</button></div></header>
 <main id="admin">
 <div class="card"><b>Collegamento torneo</b><label>Codice torneo</label><input id="room" value="BARMAGIC" oninput="saveRoom()"><button class="blue" onclick="connectRoom()">Collega</button><span id="conn" class="small">Non collegato</span></div>
 <div class="nav"><button id="tabDashboard" class="active" onclick="setTab('dashboard')">Dashboard</button><button id="tabPlayers" onclick="setTab('players')">Giocatori</button><button id="tabBracket" onclick="setTab('bracket')">Tabellone</button><button id="tabBoards" onclick="setTab('boards')">Pedane</button></div>
@@ -56,7 +56,7 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 <div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div>
 <div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="purple" onclick="rebuildBracket()">Rigenera mantenendo giocatori</button><button class="red" onclick="resetBracket()">Reset</button></div>
 </div></div>
-<div class="card"><b>Partite da chiamare</b><div class="small">Solo le partite realmente pronte, in ordine numerico crescente. Puoi scegliere il vincitore direttamente da qui.</div><div id="callQueueView"></div></div>
+<div class="card"><b>Partite da chiamare</b><div class="small">Mostra al massimo 6 partite realmente pronte, sempre in ordine numerico crescente. Puoi scegliere il vincitore direttamente da qui.</div><div id="callQueueView"></div></div>
 <div class="card"><button class="secondary" onclick="toggleFullBracket()">Mostra/Nascondi tabellone completo</button><div id="fullBracketWrap" class="hidden"><div id="bracketView"></div></div></div>
 <div class="card"><b>Posizioni finali ed eliminati</b><div id="placementsView"></div></div>
 </section>
@@ -341,9 +341,10 @@ function makeDoubleBracket(players,size){
   L[1]=makeRound(size/4,"Perdenti 2");
 
   for(let r=3;r<=k;r++){
-    L[2*r-5]=makeRound(size/Math.pow(2,r-1),`Perdenti ${2*r-4}`);
-    W[r-1]=makeRound(size/Math.pow(2,r),`Vincenti ${r}`);
-    L[2*r-4]=makeRound(size/Math.pow(2,r),`Perdenti ${2*r-3}`);
+    const count=size/Math.pow(2,r);
+    L[2*r-4]=makeRound(count,`Perdenti ${2*r-3}`);
+    W[r-1]=makeRound(count,`Vincenti ${r}`);
+    L[2*r-3]=makeRound(count,`Perdenti ${2*r-2}`);
   }
 
   // Ultimo turno perdenti, con il perdente della finale vincenti.
@@ -400,21 +401,21 @@ function makeDoubleBracket(players,size){
 
     if(r>=3){
       // Even lower previous round reduces into odd lower round.
-      const prevEven=L[2*r-6];
-      const odd=L[2*r-5];
-      prevEven.forEach((m,i)=>{
-        setRoute(m,"win",odd[Math.floor(i/2)].number,i%2===0?"p1":"p2");
+      const previous=L[2*r-5];
+      const reduced=L[2*r-4];
+      previous.forEach((m,i)=>{
+        setRoute(m,"win",reduced[Math.floor(i/2)].number,i%2===0?"p1":"p2");
       });
 
-      // Odd lower winners -> even lower same index.
-      const even=L[2*r-4];
-      odd.forEach((m,i)=>{
-        setRoute(m,"win",even[i].number,"p1");
+      // I vincitori del round ridotto entrano nel round successivo.
+      const injected=L[2*r-3];
+      reduced.forEach((m,i)=>{
+        setRoute(m,"win",injected[i].number,"p1");
       });
 
-      // Losers W_r enter even lower in reverse order.
+      // I perdenti del girone vincenti entrano nel round perdenti, in ordine inverso.
       wRound.forEach((m,i)=>{
-        const target=even[even.length-1-i];
+        const target=injected[injected.length-1-i];
         setRoute(m,"lose",target.number,"p2");
       });
     }
@@ -554,7 +555,8 @@ function getCallableMatches(){
 function renderCallQueue(){
   const box=$("callQueueView");
   if(!box)return;
-  const matches=getCallableMatches();
+  const allMatches=getCallableMatches();
+  const matches=allMatches.slice(0,6);
   if(!matches.length){
     box.innerHTML="<div class='small'>Nessuna partita pronta da chiamare.</div>";
     return;
@@ -589,7 +591,7 @@ function renderCallQueue(){
       <div class="queueActions">${boardActions}</div>
       ${winnerButtons}
     </div>`;
-  }).join("");
+  }).join("")+(allMatches.length>6?`<div class="small" style="text-align:center;margin-top:8px">Altre ${allMatches.length-6} partite pronte verranno mostrate appena avanzi con le prime.</div>`:"");
 }
 
 window.confirmWinnerFromQueue=(matchKey,player)=>{
