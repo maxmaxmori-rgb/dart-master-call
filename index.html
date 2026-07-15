@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Dart Master Call v3.8</title>
+<title>Dart Master Call v3.9</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#050814">
 <style>
@@ -34,11 +34,11 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 </style>
 </head>
 <body>
-<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.8</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
+<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.9</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
 <main id="admin">
 <div class="card"><b>Collegamento torneo</b><label>Codice torneo</label><input id="room" value="BARMAGIC" oninput="saveRoom()"><button class="blue" onclick="connectRoom()">Collega</button><span id="conn" class="small">Non collegato</span></div>
 <div class="nav"><button id="tabDashboard" class="active" onclick="setTab('dashboard')">Dashboard</button><button id="tabPlayers" onclick="setTab('players')">Giocatori</button><button id="tabBracket" onclick="setTab('bracket')">Tabellone</button><button id="tabBoards" onclick="setTab('boards')">Pedane</button></div>
-<section id="dashboardPanel"><div class="layout"><div class="card"><b>Giocatori</b><div id="playersList"></div><button class="blue" onclick="setTab('players')">Gestisci</button></div><div class="card"><b>Tabellone</b><div id="bracketMini"></div><button class="purple" onclick="setTab('bracket')">Apri tabellone</button></div><div class="card"><b>Pedane</b><div id="boardsMini"></div></div></div></section>
+<section id="dashboardPanel"><div class="layout"><div class="card"><b>Giocatori</b><div id="playersList"></div><button class="blue" onclick="setTab('players')">Gestisci</button></div><div class="card"><b>Tabellone</b><div id="bracketMini"></div><button class="purple" onclick="setTab('bracket')">Apri tabellone</button></div><div class="card"><b>Pedane</b><div id="boardsMini"></div></div><div class="card"><b>Classifica eliminati</b><div id="placementsMini"></div></div></div></section>
 <section id="playersPanel" class="hidden"><div class="layout"><div class="card"><b>Aggiungi giocatore</b><label>Nome</label><input id="playerName" placeholder="Es. Marco Rossi"><button onclick="addPlayer()">Aggiungi</button><button class="purple" onclick="shufflePlayers()">Sorteggio casuale</button></div><div class="card"><b>Importa lista</b><div class="small">Un giocatore per riga.</div><textarea id="bulkPlayers" placeholder="Marco&#10;Luca&#10;Andrea"></textarea><button class="blue" onclick="importPlayers()">Importa</button></div><div class="card"><b>Lista giocatori</b><div id="playersListFull"></div></div></div></section>
 <section id="bracketPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px;flex:1"><label>Numero giocatori</label><select id="bracketSize" onchange="setBracketSize()"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div><div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div><div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="purple" onclick="rebuildBracket()">Rigenera mantenendo giocatori</button><button class="red" onclick="resetBracket()">Reset</button></div></div></div><div class="card"><b>Tabellone</b><div class="small">Doppio KO 16 numerato 1–30. Solo i BYE avanzano automaticamente; le partite reali avanzano cliccando manualmente il vincitore.</div><div id="bracketView"></div></div></section>
 <section id="boardsPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px"><label>Numero pedane</label><select id="boardCount" onchange="setBoardCount()"><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option></select></div><div style="min-width:180px"><label>Durata chiamata</label><select id="callSeconds" onchange="setCallSeconds()"><option value="10">10 secondi</option><option value="15" selected>15 secondi</option><option value="20">20 secondi</option><option value="30">30 secondi</option></select></div></div></div><div class="card"><b>Gestione pedane</b><div id="boardsAdmin" class="boards"></div></div></section>
@@ -52,7 +52,7 @@ const $=id=>document.getElementById(id);let app,db,roomRef,state=defaultState(),
 function defaultBoards(){return Array.from({length:6},(_,i)=>({id:i+1,status:"free",p1:"",p2:"",matchKey:null,calledAt:0,playingAt:0}))}
 function defaultState(){return {players:[],boardCount:6,callSeconds:15,displayMode:"mixed",boards:defaultBoards(),lastCall:null,bracketSize:16,bracketType:"double",bracket:null}}
 function hydrateBracket(b){
-  if(!b||!b.matches)return b;
+  if(!b||!b.matches)return b;b.placements=b.placements||[];b.wins=b.wins||{};
 
   // Firebase salva winnerRounds/loserRounds come copie separate.
   // Qui le ricolleghiamo sempre agli oggetti canonici dentro matches.
@@ -73,7 +73,7 @@ function hydrateBracket(b){
 }
 function norm(s){
   s=s||defaultState();
-  s.players=s.players||[];
+  s.players=Array.isArray(s.players)?s.players:Object.values(s.players||{});
   s.boards=s.boards||defaultBoards();
   while(s.boards.length<6)s.boards.push({id:s.boards.length+1,status:"free",p1:"",p2:"",matchKey:null});
   s.boardCount=+s.boardCount||6;
@@ -91,7 +91,35 @@ window.setTab=t=>{tab=t;["dashboard","players","bracket","boards"].forEach(x=>{$
 window.showAdmin=()=>{$("admin").classList.remove("hidden");$("display").classList.add("hidden");$("topbar").classList.remove("hidden")}
 window.openDisplay=mode=>{switchDisplay(mode);$("admin").classList.add("hidden");$("display").classList.remove("hidden");$("topbar").classList.add("hidden");connectRoom();try{document.documentElement.requestFullscreen?.()}catch(e){}}
 window.switchDisplay=mode=>{displayMode=mode;localStorage.setItem("dmc_displayMode",mode);if(roomRef)push({displayMode:mode});renderDisplay()}
-window.addPlayer=()=>{const n=$("playerName").value.trim();if(!n)return;push({players:[...state.players,n]});$("playerName").value=""};window.deletePlayer=i=>{if(confirm("Eliminare giocatore?")){state.players.splice(i,1);save()}};window.editPlayer=i=>{const n=prompt("Modifica nome",state.players[i]);if(n&&n.trim()){state.players[i]=n.trim();save()}};window.importPlayers=()=>{const arr=$("bulkPlayers").value.split(/\n+/).map(x=>x.trim()).filter(Boolean);if(arr.length)push({players:[...state.players,...arr]})};window.shufflePlayers=()=>{state.players=shuffle([...state.players]);save()};function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+window.addPlayer=()=>{const n=$("playerName").value.trim();if(!n)return;push({players:[...state.players,n]});$("playerName").value=""};window.deletePlayer=i=>{if(confirm("Eliminare giocatore?")){state.players.splice(i,1);save()}};window.editPlayer=i=>{const n=prompt("Modifica nome",state.players[i]);if(n&&n.trim()){state.players[i]=n.trim();save()}};window.importPlayers=()=>{const arr=$("bulkPlayers").value.split(/\n+/).map(x=>x.trim()).filter(Boolean);if(arr.length)push({players:[...state.players,...arr]})};window.shufflePlayers=()=>{
+  if(state.players.length<2){alert("Inserisci almeno due giocatori.");return}
+  if(state.bracket && Object.values(state.bracket.matches||{}).some(m=>m.winner)){
+    if(!confirm("Il sorteggio cancellerà i risultati già inseriti e rigenererà il tabellone. Continuare?"))return;
+  }
+  state.players=secureShuffle([...state.players]);
+  if(state.bracket){
+    state.bracket=hydrateBracket(makeBracket(state.players,state.bracketSize,state.bracketType));
+  }
+  save();
+  alert("Sorteggio completato e tabellone aggiornato.");
+};
+function secureShuffle(a){
+  const randInt=max=>{
+    if(window.crypto?.getRandomValues){
+      const buf=new Uint32Array(1);
+      const limit=Math.floor(0x100000000/max)*max;
+      let x;
+      do{window.crypto.getRandomValues(buf);x=buf[0]}while(x>=limit);
+      return x%max;
+    }
+    return Math.floor(Math.random()*max);
+  };
+  for(let i=a.length-1;i>0;i--){
+    const j=randInt(i+1);
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
 window.setBoardCount=()=>push({boardCount:+$("boardCount").value});window.setCallSeconds=()=>push({callSeconds:+$("callSeconds").value})
 window.assignBoard=i=>{const p1=$("bp1_"+i).value,p2=$("bp2_"+i).value;if(!p1||!p2||p1===p2){alert("Scegli due giocatori diversi");return}state.boards[i]={...state.boards[i],p1,p2,status:"called",calledAt:Date.now()};state.lastCall={...state.boards[i],ts:Date.now()};save()}
 window.callBoard=i=>{const b=state.boards[i];if(!b.p1||!b.p2){alert("Prima assegna i giocatori");return}state.boards[i]={...b,status:"called",calledAt:Date.now()};state.lastCall={...state.boards[i],ts:Date.now()};save()}
@@ -114,17 +142,20 @@ window.assignMatchToBoard=(matchKey,bi)=>{
 window.setBracketSize=()=>push({bracketSize:+$("bracketSize").value});window.setBracketType=()=>push({bracketType:$("bracketType").value});window.generateBracket=()=>{
   state.bracket=hydrateBracket(makeBracket(state.players,state.bracketSize,state.bracketType));
   if(state.bracket?.type==="double"){
-    const checks=[
-      ["M13","M20"],["M14","M19"],["M15","M18"],["M16","M17"],
-      ["M23","M25"],["M24","M26"],["M28","M29"]
-    ];
-    const bad=checks.filter(([from,to])=>state.bracket.matches[from]?.loseTo?.key!==to);
-    if(bad.length){
-      alert("Errore interno nella mappa del tabellone: "+bad.map(x=>x.join("→")).join(", "));
-    }
+    const expected={
+      1:[13,"p1",9,"p1"],2:[13,"p2",9,"p2"],3:[14,"p1",10,"p1"],4:[14,"p2",10,"p2"],
+      5:[15,"p1",11,"p1"],6:[15,"p2",11,"p2"],7:[16,"p1",12,"p1"],8:[16,"p2",12,"p2"],
+      13:[23,"p1",20,"p2"],14:[23,"p2",19,"p2"],15:[24,"p1",18,"p2"],16:[24,"p2",17,"p2"],
+      23:[28,"p1",25,"p2"],24:[28,"p2",26,"p2"],28:[30,"p1",29,"p2"]
+    };
+    const bad=Object.entries(expected).filter(([n,r])=>{
+      const m=state.bracket.matches["M"+n];
+      return m?.winTo?.key!=="M"+r[0]||m?.winTo?.slot!==r[1]||m?.loseTo?.key!=="M"+r[2]||m?.loseTo?.slot!==r[3];
+    });
+    if(bad.length)alert("Errore interno mappa: "+bad.map(x=>x[0]).join(", "));
   }
   save()
-};window.resetBracket=()=>{if(confirm("Reset tabellone?")){state.bracket=null;save()}};window.rebuildBracket=()=>{if(confirm("Rigenerare il tabellone mantenendo i giocatori? I risultati verranno cancellati.")){state.bracket=hydrateBracket(makeBracket(state.players,state.bracketSize,state.bracketType));save()}};window.resetAll=()=>{if(confirm("Reset completo?"))set(roomRef,defaultState())}
+}};window.rebuildBracket=()=>{if(confirm("Rigenerare il tabellone mantenendo i giocatori? I risultati verranno cancellati.")){state.bracket=hydrateBracket(makeBracket(state.players,state.bracketSize,state.bracketType));save()}};window.resetAll=()=>{if(confirm("Reset completo?"))set(roomRef,defaultState())}
 function newMatch(n){return {key:"M"+n,id:String(n),number:n,p1:"",p2:"",winner:null,loser:null,status:"waiting",winTo:null,loseTo:null}}
 function setRoute(m,kind,to,slot){m[kind==="win"?"winTo":"loseTo"]={key:"M"+to,slot}}
 function putPlayer(b,route,player){
@@ -137,6 +168,34 @@ function updateReady(m){
   if(m.winner)return;
   if(m.p1&&m.p2)m.status="ready";
   else if(m.status!=="called")m.status="waiting";
+}
+function addWin(b,player){
+  if(!player||player==="BYE")return;
+  b.wins=b.wins||{};
+  b.wins[player]=(b.wins[player]||0)+1;
+}
+function placementForLoss(matchNumber,type){
+  if(type==="single")return null;
+  if([9,10,11,12].includes(matchNumber))return 13;
+  if([17,18,19,20].includes(matchNumber))return 9;
+  if([21,22].includes(matchNumber))return 7;
+  if([25,26].includes(matchNumber))return 5;
+  if(matchNumber===27)return 4;
+  if(matchNumber===29)return 3;
+  if(matchNumber===30)return 2;
+  return null;
+}
+function recordPlacement(b,player,position,matchNumber){
+  if(!player||player==="BYE"||!position)return;
+  b.placements=b.placements||[];
+  if(b.placements.some(x=>x.player===player))return;
+  b.placements.push({
+    player,
+    position,
+    eliminatedIn:matchNumber,
+    wins:(b.wins||{})[player]||0,
+    at:Date.now()
+  });
 }
 function routeMatchResult(b,m,winner,loser){
   putPlayer(b,m.winTo,winner);
@@ -152,9 +211,22 @@ function routeMatchResult(b,m,winner,loser){
 function completeMatch(b,m,winner,automatic=false){
   if(!m||m.winner||!winner)return false;
   const loser=m.p1===winner?m.p2:m.p1;
-  m.winner=winner; m.loser=loser; m.status="done";
-  if(!automatic)releaseBoard(m.key);
+  m.winner=winner;
+  m.loser=loser;
+  m.status="done";
+  if(!automatic){
+    releaseBoard(m.key);
+    addWin(b,winner);
+  }
   routeMatchResult(b,m,winner,loser);
+
+  const position=placementForLoss(m.number,b.type);
+  if(position)recordPlacement(b,loser,position,m.number);
+
+  if(m.number===30){
+    b.champion=winner;
+    recordPlacement(b,winner,1,m.number);
+  }
   return true;
 }
 function autoAdvanceByes(b){
@@ -171,7 +243,7 @@ function autoAdvanceByes(b){
   }
 }
 function makeDouble16(players){
-  const b={size:16,type:"double",matches:{},winnerRounds:[],loserRounds:[],final:null,champion:null};
+  const b={size:16,type:"double",matches:{},winnerRounds:[],loserRounds:[],final:null,champion:null,placements:[],wins:{}};
   for(let n=1;n<=30;n++)b.matches["M"+n]=newMatch(n);
   const M=n=>b.matches["M"+n];
   const seed=[...players].slice(0,16);while(seed.length<16)seed.push("BYE");
@@ -194,7 +266,7 @@ function makeDouble16(players){
   return b;
 }
 function makeSingleBracket(players,size){
-  const b={size,type:"single",matches:{},winnerRounds:[],loserRounds:[],final:null,champion:null};
+  const b={size,type:"single",matches:{},winnerRounds:[],loserRounds:[],final:null,champion:null,placements:[],wins:{}};
   const seed=[...players].slice(0,size);while(seed.length<size)seed.push("BYE");
   let num=1,prev=[];
   let count=size/2;
@@ -224,7 +296,7 @@ function chooseWinner(matchKey,player){
 window.pickWinner=(side,ri,mi,player)=>{const m=(side==="W"?state.bracket?.winnerRounds:state.bracket?.loserRounds)?.[ri]?.[mi];if(m)chooseWinner(m.key,player)}
 window.pickFinal=player=>chooseWinner(state.bracket?.final?.key,player)
 
-function render(){ $("boardCount").value=state.boardCount;$("callSeconds").value=state.callSeconds;$("bracketSize").value=state.bracketSize;$("bracketType").value=state.bracketType;renderPlayers();renderBoards();renderBracket();renderDisplay();maybeOverlay() }
+function render(){ $("boardCount").value=state.boardCount;$("callSeconds").value=state.callSeconds;$("bracketSize").value=state.bracketSize;$("bracketType").value=state.bracketType;renderPlayers();renderBoards();renderBracket();renderPlacements();renderDisplay();maybeOverlay() }
 function renderPlayers(){const list=state.players.map((p,i)=>`<div class="player"><div class="num">${i+1}</div><div onclick="editPlayer(${i})">${esc(p)}</div><button class="deleteBtn" onclick="deletePlayer(${i})">🗑</button></div>`).join("")||"<div class='small'>Nessun giocatore inserito</div>";$("playersList").innerHTML=list;$("playersListFull").innerHTML=list}
 function opt(sel){return `<option value="">Scegli</option>`+state.players.map(p=>`<option ${p===sel?"selected":""}>${esc(p)}</option>`).join("")}
 function pill(s){return s==="playing"?`<span class="pill playing">🟢 IN GIOCO</span>`:s==="called"?`<span class="pill called">🟡 CHIAMATA</span>`:`<span class="pill free">⚪ LIBERA</span>`}
@@ -259,6 +331,16 @@ function nextReady(){
   return Object.values(state.bracket.matches).sort((a,b)=>a.number-b.number).find(m=>!m.winner&&m.p1&&m.p2&&m.p1!=="BYE"&&m.p2!=="BYE")||null
 }
 function compactBracketTv(){const b=state.bracket;if(!b)return "<div class='small'>Nessun tabellone generato.</div>";const groups=[...b.winnerRounds.map((r,i)=>({name:"V"+(i+1),r})),...b.loserRounds.map((r,i)=>({name:"P"+(i+1),r})),{name:"Finale",r:[b.final]}];return `<div class="tvBracketCompact"><div class="tvBracketGrid">`+groups.map(x=>`<div class="tvRound"><h3>${x.name}</h3>`+x.r.map(m=>`<div class="tvSlot"><b>N° ${esc(m.id)}</b><div class="tvP">${esc(m.p1||"---")}</div><div class="tvP">${esc(m.p2||"---")}</div><div class="small">${m.winner?"✅ "+esc(m.winner):m.status==="ready"?"⏳ pronta":"attesa"}</div></div>`).join("")+`</div>`).join("")+`</div></div>`}
+function renderPlacements(){
+  const b=state.bracket;
+  const rows=[...(b?.placements||[])].sort((a,c)=>a.position-c.position||a.at-c.at);
+  const html=rows.length
+    ? rows.map(x=>`<div class="player"><div class="num">${x.position}°</div><div><b>${esc(x.player)}</b><div class="small">Eliminato nella partita ${x.eliminatedIn} · Vittorie: ${x.wins||0}</div></div><div></div></div>`).join("")
+    : "<div class='small'>Nessun giocatore eliminato definitivamente.</div>";
+  const champion=b?.champion?`<div class="player"><div class="num">🏆</div><div><b>${esc(b.champion)}</b><div class="small">1° posto · Vittorie: ${(b.wins||{})[b.champion]||0}</div></div><div></div></div>`:"";
+  $("placementsView").innerHTML=champion+html;
+  $("placementsMini").innerHTML=champion+html;
+}
 function renderDisplay(){["Boards","Bracket","Mixed"].forEach(x=>{const el=$("tvBtn"+x); if(el) el.classList.toggle("active", displayMode===x.toLowerCase())});const boards=state.boards.slice(0,state.boardCount),playing=boards.filter(b=>b.status==="playing").length,called=boards.filter(b=>b.status==="called").length,free=boards.filter(b=>b.status==="free").length;$("displayStats").innerHTML=`🟢 ${playing} · ⚪ ${free} · 🟡 ${called}`;const next=nextReady();const nextHtml=next?`<div class="nextBox"><b>PROSSIMA PARTITA</b><br>${esc(next.p1)} VS ${esc(next.p2)}</div>`:"";const tvBoards=nextHtml+`<div class="tvBoards">`+boards.map(b=>`<div class="tvTile ${b.status==="called"?"calledState":b.status==="playing"?"playingState":""}"><div class="tvTop"><span>P${b.id}</span><span>${b.status==="playing"?"🟢":b.status==="called"?"🟡":"⚪"}</span></div><div class="tvPlayers">${b.status==="free"?"LIBERA":esc(b.p1)+"<br><span style='font-size:.55em;color:var(--muted)'>VS</span><br>"+esc(b.p2)}</div><div class="tvSub">${b.status==="called"?"PRESENTARSI":b.status==="playing"?"IN GIOCO":"DISPONIBILE"}</div></div>`).join("")+`</div>`;const tvBracket=compactBracketTv();$("displayContent").innerHTML=displayMode==="boards"?tvBoards:displayMode==="bracket"?tvBracket:`<div class="mixedGrid"><div>${tvBracket}</div><div>${tvBoards}</div></div>`}
 function maybeOverlay(){const c=state.lastCall;if(!c||!c.ts||c.ts===lastCallTs)return;lastCallTs=c.ts;showOverlay(c)}
 function showOverlay(c){clearTimeout(overlayTimer);$("callOverlay").classList.remove("hidden");$("callOverlay").innerHTML=`<div class="callBox"><div class="callTitle">🚨 CHIAMATA</div><div class="callPedana">PEDANA ${esc(c.id)}</div><div class="callPlayers">${esc(c.p1)}<br><span style="font-size:.45em;color:var(--muted)">VS</span><br>${esc(c.p2)}</div><div class="callPedana">PRESENTARSI IN SALA FRECCETTE</div></div>`;strongSound();overlayTimer=setTimeout(()=>$("callOverlay").classList.add("hidden"),state.callSeconds*1000)}
