@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Dart Master Call v3.10</title>
+<title>Dart Master Call v3.11</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#050814">
 <style>
@@ -34,7 +34,7 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 </style>
 </head>
 <body>
-<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.10</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
+<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.11</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
 <main id="admin">
 <div class="card"><b>Collegamento torneo</b><label>Codice torneo</label><input id="room" value="BARMAGIC" oninput="saveRoom()"><button class="blue" onclick="connectRoom()">Collega</button><span id="conn" class="small">Non collegato</span></div>
 <div class="nav"><button id="tabDashboard" class="active" onclick="setTab('dashboard')">Dashboard</button><button id="tabPlayers" onclick="setTab('players')">Giocatori</button><button id="tabBracket" onclick="setTab('bracket')">Tabellone</button><button id="tabBoards" onclick="setTab('boards')">Pedane</button></div>
@@ -174,7 +174,7 @@ window.setBracketSize=()=>push({bracketSize:+$("bracketSize").value});window.set
     if(bad.length)alert("Errore interno mappa: "+bad.map(x=>x[0]).join(", "));
   }
   save()
-}};window.rebuildBracket=()=>{if(confirm("Rigenerare il tabellone mantenendo i giocatori? I risultati verranno cancellati.")){state.bracket=hydrateBracket(makeBracket(state.players,state.bracketSize,state.bracketType));save()}};window.resetAll=()=>{if(confirm("Reset completo?"))set(roomRef,defaultState())}
+};window.rebuildBracket=()=>{if(confirm("Rigenerare il tabellone mantenendo i giocatori? I risultati verranno cancellati.")){state.bracket=hydrateBracket(makeBracket(state.players,state.bracketSize,state.bracketType));save()}};window.resetAll=()=>{if(confirm("Reset completo?"))set(roomRef,defaultState())}
 function newMatch(n){return {key:"M"+n,id:String(n),number:n,p1:"",p2:"",winner:null,loser:null,status:"waiting",winTo:null,loseTo:null}}
 function setRoute(m,kind,to,slot){m[kind==="win"?"winTo":"loseTo"]={key:"M"+to,slot}}
 function putPlayer(b,route,player){
