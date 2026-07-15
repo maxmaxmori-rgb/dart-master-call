@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Dart Master Call v3.9</title>
+<title>Dart Master Call v3.10</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#050814">
 <style>
@@ -34,13 +34,13 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 </style>
 </head>
 <body>
-<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.9</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
+<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.10</span></div><div class="row"><button class="secondary" onclick="showAdmin()">Organizzatore</button><button class="secondary" onclick="openDisplay('boards')">TV Pedane</button><button class="secondary" onclick="openDisplay('bracket')">TV Tabellone</button><button class="secondary" onclick="openDisplay('mixed')">TV Mista</button></div></header>
 <main id="admin">
 <div class="card"><b>Collegamento torneo</b><label>Codice torneo</label><input id="room" value="BARMAGIC" oninput="saveRoom()"><button class="blue" onclick="connectRoom()">Collega</button><span id="conn" class="small">Non collegato</span></div>
 <div class="nav"><button id="tabDashboard" class="active" onclick="setTab('dashboard')">Dashboard</button><button id="tabPlayers" onclick="setTab('players')">Giocatori</button><button id="tabBracket" onclick="setTab('bracket')">Tabellone</button><button id="tabBoards" onclick="setTab('boards')">Pedane</button></div>
 <section id="dashboardPanel"><div class="layout"><div class="card"><b>Giocatori</b><div id="playersList"></div><button class="blue" onclick="setTab('players')">Gestisci</button></div><div class="card"><b>Tabellone</b><div id="bracketMini"></div><button class="purple" onclick="setTab('bracket')">Apri tabellone</button></div><div class="card"><b>Pedane</b><div id="boardsMini"></div></div><div class="card"><b>Classifica eliminati</b><div id="placementsMini"></div></div></div></section>
 <section id="playersPanel" class="hidden"><div class="layout"><div class="card"><b>Aggiungi giocatore</b><label>Nome</label><input id="playerName" placeholder="Es. Marco Rossi"><button onclick="addPlayer()">Aggiungi</button><button class="purple" onclick="shufflePlayers()">Sorteggio casuale</button></div><div class="card"><b>Importa lista</b><div class="small">Un giocatore per riga.</div><textarea id="bulkPlayers" placeholder="Marco&#10;Luca&#10;Andrea"></textarea><button class="blue" onclick="importPlayers()">Importa</button></div><div class="card"><b>Lista giocatori</b><div id="playersListFull"></div></div></div></section>
-<section id="bracketPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px;flex:1"><label>Numero giocatori</label><select id="bracketSize" onchange="setBracketSize()"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div><div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div><div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="purple" onclick="rebuildBracket()">Rigenera mantenendo giocatori</button><button class="red" onclick="resetBracket()">Reset</button></div></div></div><div class="card"><b>Tabellone</b><div class="small">Doppio KO 16 numerato 1–30. Solo i BYE avanzano automaticamente; le partite reali avanzano cliccando manualmente il vincitore.</div><div id="bracketView"></div></div></section>
+<section id="bracketPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px;flex:1"><label>Numero giocatori</label><select id="bracketSize" onchange="setBracketSize()"><option>8</option><option selected>16</option><option>32</option><option>64</option><option>128</option></select></div><div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div><div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="purple" onclick="rebuildBracket()">Rigenera mantenendo giocatori</button><button class="red" onclick="resetBracket()">Reset</button></div></div></div><div class="card"><b>Tabellone</b><div class="small">Doppio KO 16 numerato 1–30. Solo i BYE avanzano automaticamente; le partite reali avanzano cliccando manualmente il vincitore.</div><div id="bracketView"></div></div><div class="card"><b>Posizioni finali ed eliminati</b><div id="placementsView"></div></div></section>
 <section id="boardsPanel" class="hidden"><div class="card"><div class="row"><div style="min-width:160px"><label>Numero pedane</label><select id="boardCount" onchange="setBoardCount()"><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option></select></div><div style="min-width:180px"><label>Durata chiamata</label><select id="callSeconds" onchange="setCallSeconds()"><option value="10">10 secondi</option><option value="15" selected>15 secondi</option><option value="20">20 secondi</option><option value="30">30 secondi</option></select></div></div></div><div class="card"><b>Gestione pedane</b><div id="boardsAdmin" class="boards"></div></div></section>
 <div class="card"><button class="red" onclick="resetAll()">Reset completo app</button></div>
 </main>
@@ -85,7 +85,26 @@ function norm(s){
   return s
 }
 $("room").value=localStorage.getItem("dmc_room")||"BARMAGIC";window.saveRoom=()=>localStorage.setItem("dmc_room",$("room").value.trim()||"BARMAGIC");
-window.connectRoom=()=>{try{if(!window.firebaseConfig||!window.firebaseConfig.apiKey||window.firebaseConfig.apiKey.includes("INSERISCI")){$("conn").textContent="⚠️ firebase-config.js non configurato";return}app=app||initializeApp(window.firebaseConfig);db=getDatabase(app);const room=($("room").value.trim()||"BARMAGIC").replace(/[^a-zA-Z0-9_-]/g,"");roomRef=ref(db,"rooms/"+room);onValue(roomRef,snap=>{state=norm(snap.val());displayMode=state.displayMode||displayMode;render()});$("conn").textContent="✅ Collegato"}catch(e){$("conn").textContent="Errore: "+e.message}}
+window.connectRoom=()=>{try{if(!window.firebaseConfig||!window.firebaseConfig.apiKey||window.firebaseConfig.apiKey.includes("INSERISCI")){$("conn").textContent="⚠️ firebase-config.js non configurato";return}app=app||initializeApp(window.firebaseConfig);db=getDatabase(app);const room=($("room").value.trim()||"BARMAGIC").replace(/[^a-zA-Z0-9_-]/g,"");roomRef=ref(db,"rooms/"+room);
+  onValue(roomRef,snap=>{
+    try{
+      state=norm(snap.val());
+      displayMode=state.displayMode||displayMode;
+      render();
+      $("conn").textContent="✅ Collegato";
+    }catch(renderError){
+      console.error(renderError);
+      $("conn").textContent="Errore schermata: "+renderError.message;
+    }
+  },dbError=>{
+    console.error(dbError);
+    $("conn").textContent="Errore Firebase: "+dbError.message;
+  });
+  $("conn").textContent="Connessione...";
+}catch(e){
+  console.error(e);
+  $("conn").textContent="Errore: "+e.message
+}}
 function push(p){if(!roomRef){alert("Prima premi Collega");return} update(roomRef,p)}function save(){if(!roomRef){alert("Prima premi Collega");return} set(roomRef,state)}
 window.setTab=t=>{tab=t;["dashboard","players","bracket","boards"].forEach(x=>{$(x+"Panel").classList.toggle("hidden",x!==t);$("tab"+cap(x)).classList.toggle("active",x===t)});render()};function cap(s){return s[0].toUpperCase()+s.slice(1)}
 window.showAdmin=()=>{$("admin").classList.remove("hidden");$("display").classList.add("hidden");$("topbar").classList.remove("hidden")}
@@ -338,8 +357,10 @@ function renderPlacements(){
     ? rows.map(x=>`<div class="player"><div class="num">${x.position}°</div><div><b>${esc(x.player)}</b><div class="small">Eliminato nella partita ${x.eliminatedIn} · Vittorie: ${x.wins||0}</div></div><div></div></div>`).join("")
     : "<div class='small'>Nessun giocatore eliminato definitivamente.</div>";
   const champion=b?.champion?`<div class="player"><div class="num">🏆</div><div><b>${esc(b.champion)}</b><div class="small">1° posto · Vittorie: ${(b.wins||{})[b.champion]||0}</div></div><div></div></div>`:"";
-  $("placementsView").innerHTML=champion+html;
-  $("placementsMini").innerHTML=champion+html;
+  const full=$("placementsView");
+  const mini=$("placementsMini");
+  if(full)full.innerHTML=champion+html;
+  if(mini)mini.innerHTML=champion+html;
 }
 function renderDisplay(){["Boards","Bracket","Mixed"].forEach(x=>{const el=$("tvBtn"+x); if(el) el.classList.toggle("active", displayMode===x.toLowerCase())});const boards=state.boards.slice(0,state.boardCount),playing=boards.filter(b=>b.status==="playing").length,called=boards.filter(b=>b.status==="called").length,free=boards.filter(b=>b.status==="free").length;$("displayStats").innerHTML=`🟢 ${playing} · ⚪ ${free} · 🟡 ${called}`;const next=nextReady();const nextHtml=next?`<div class="nextBox"><b>PROSSIMA PARTITA</b><br>${esc(next.p1)} VS ${esc(next.p2)}</div>`:"";const tvBoards=nextHtml+`<div class="tvBoards">`+boards.map(b=>`<div class="tvTile ${b.status==="called"?"calledState":b.status==="playing"?"playingState":""}"><div class="tvTop"><span>P${b.id}</span><span>${b.status==="playing"?"🟢":b.status==="called"?"🟡":"⚪"}</span></div><div class="tvPlayers">${b.status==="free"?"LIBERA":esc(b.p1)+"<br><span style='font-size:.55em;color:var(--muted)'>VS</span><br>"+esc(b.p2)}</div><div class="tvSub">${b.status==="called"?"PRESENTARSI":b.status==="playing"?"IN GIOCO":"DISPONIBILE"}</div></div>`).join("")+`</div>`;const tvBracket=compactBracketTv();$("displayContent").innerHTML=displayMode==="boards"?tvBoards:displayMode==="bracket"?tvBracket:`<div class="mixedGrid"><div>${tvBracket}</div><div>${tvBoards}</div></div>`}
 function maybeOverlay(){const c=state.lastCall;if(!c||!c.ts||c.ts===lastCallTs)return;lastCallTs=c.ts;showOverlay(c)}
