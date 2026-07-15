@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Dart Master Call v3.12</title>
+<title>Dart Master Call v3.13</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#050814">
 <style>
@@ -37,10 +37,14 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 .queuePlayers{text-align:center;font-size:18px;font-weight:1000;margin:8px 0}
 .queueActions{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
 .lockedBtn{opacity:.42;filter:grayscale(1);pointer-events:none}
+
+.winnerButtons{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.winnerButtons button{background:var(--green);color:#031109}
+.winnerLabel{font-size:11px;color:var(--muted);text-align:center;margin-top:6px}
 </style>
 </head>
 <body>
-<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.12</span></div><div class="row"><button id="adminModeBtn" class="secondary" onclick="showAdmin()">🔒 Organizzatore</button><button id="tvBoardsBtn" class="secondary tvAccess" onclick="openDisplay('boards')">TV Pedane</button><button id="tvBracketBtn" class="secondary tvAccess" onclick="openDisplay('bracket')">TV Tabellone</button><button id="tvMixedBtn" class="secondary tvAccess" onclick="openDisplay('mixed')">TV Mista</button><button id="unlockBtn" class="purple" onclick="toggleTvLock()">🔐 Sblocca TV</button></div></header>
+<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.13</span></div><div class="row"><button id="adminModeBtn" class="secondary" onclick="showAdmin()">🔒 Organizzatore</button><button id="tvBoardsBtn" class="secondary tvAccess" onclick="openDisplay('boards')">TV Pedane</button><button id="tvBracketBtn" class="secondary tvAccess" onclick="openDisplay('bracket')">TV Tabellone</button><button id="tvMixedBtn" class="secondary tvAccess" onclick="openDisplay('mixed')">TV Mista</button><button id="unlockBtn" class="purple" onclick="toggleTvLock()">🔐 Sblocca TV</button></div></header>
 <main id="admin">
 <div class="card"><b>Collegamento torneo</b><label>Codice torneo</label><input id="room" value="BARMAGIC" oninput="saveRoom()"><button class="blue" onclick="connectRoom()">Collega</button><span id="conn" class="small">Non collegato</span></div>
 <div class="nav"><button id="tabDashboard" class="active" onclick="setTab('dashboard')">Dashboard</button><button id="tabPlayers" onclick="setTab('players')">Giocatori</button><button id="tabBracket" onclick="setTab('bracket')">Tabellone</button><button id="tabBoards" onclick="setTab('boards')">Pedane</button></div>
@@ -52,7 +56,7 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 <div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div>
 <div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="purple" onclick="rebuildBracket()">Rigenera mantenendo giocatori</button><button class="red" onclick="resetBracket()">Reset</button></div>
 </div></div>
-<div class="card"><b>Partite da chiamare</b><div class="small">Solo le partite realmente pronte, in ordine numerico dalla 1 alla 30.</div><div id="callQueueView"></div></div>
+<div class="card"><b>Partite da chiamare</b><div class="small">Solo le partite realmente pronte, in ordine numerico dalla 1 alla 30. Puoi scegliere il vincitore direttamente da qui.</div><div id="callQueueView"></div></div>
 <div class="card"><button class="secondary" onclick="toggleFullBracket()">Mostra/Nascondi tabellone completo</button><div id="fullBracketWrap" class="hidden"><div id="bracketView"></div></div></div>
 <div class="card"><b>Posizioni finali ed eliminati</b><div id="placementsView"></div></div>
 </section>
@@ -399,13 +403,56 @@ function renderCallQueue(){
   const box=$("callQueueView");
   if(!box)return;
   const matches=getCallableMatches();
-  if(!matches.length){box.innerHTML="<div class='small'>Nessuna partita pronta da chiamare.</div>";return}
+  if(!matches.length){
+    box.innerHTML="<div class='small'>Nessuna partita pronta da chiamare.</div>";
+    return;
+  }
+
   box.innerHTML=matches.map(m=>{
     const assigned=state.boards.find(b=>b.matchKey===m.key);
-    const freeButtons=state.boards.slice(0,state.boardCount).map((b,i)=>b.status==="free"?`<button class="blue" onclick="assignMatchToBoard('${m.key}',${i})">Ped. ${i+1}</button>`:"").join("");
-    return `<div class="queueMatch"><div class="queueTop"><span>Partita ${m.number}</span><span>${assigned?`🟡 Pedana ${assigned.id}`:"⏳ Da chiamare"}</span></div><div class="queuePlayers">${esc(m.p1)} <span class="small">VS</span> ${esc(m.p2)}</div><div class="queueActions">${assigned?`<button onclick="callBoard(${assigned.id-1})">🔁 Richiama</button><button class="green" onclick="playBoard(${assigned.id-1})">▶ In gioco</button>`:freeButtons||"<span class='small'>Nessuna pedana libera</span>"}</div></div>`;
+    const freeButtons=state.boards.slice(0,state.boardCount).map((b,i)=>
+      b.status==="free"
+        ? `<button class="blue" onclick="assignMatchToBoard('${m.key}',${i})">Ped. ${i+1}</button>`
+        : ""
+    ).join("");
+
+    const boardActions=assigned
+      ? `<button onclick="callBoard(${assigned.id-1})">🔁 Richiama</button>
+         <button class="green" onclick="playBoard(${assigned.id-1})">▶ In gioco</button>`
+      : freeButtons || "<span class='small'>Nessuna pedana libera</span>";
+
+    const winnerButtons=`
+      <div class="winnerLabel">Seleziona il vincitore</div>
+      <div class="winnerButtons">
+        <button onclick="confirmWinnerFromQueue('${m.key}','${escAttr(m.p1)}')">🏆 ${esc(m.p1)}</button>
+        <button onclick="confirmWinnerFromQueue('${m.key}','${escAttr(m.p2)}')">🏆 ${esc(m.p2)}</button>
+      </div>`;
+
+    return `<div class="queueMatch">
+      <div class="queueTop">
+        <span>Partita ${m.number}</span>
+        <span>${assigned?`🟡 Pedana ${assigned.id}`:"⏳ Da chiamare"}</span>
+      </div>
+      <div class="queuePlayers">${esc(m.p1)} <span class="small">VS</span> ${esc(m.p2)}</div>
+      <div class="queueActions">${boardActions}</div>
+      ${winnerButtons}
+    </div>`;
   }).join("");
 }
+
+window.confirmWinnerFromQueue=(matchKey,player)=>{
+  const m=findMatch(matchKey);
+  if(!m||m.winner){
+    alert("Questa partita è già stata completata.");
+    return;
+  }
+
+  const assigned=state.boards.find(b=>b.matchKey===matchKey);
+  const boardText=assigned?` sulla Pedana ${assigned.id}`:"";
+  if(!confirm(`Confermi ${player} vincitore della Partita ${m.number}${boardText}?`))return;
+
+  chooseWinner(matchKey,player);
+};
 window.toggleFullBracket=()=>{const el=$("fullBracketWrap");if(el)el.classList.toggle("hidden")};
 
 function renderPlacements(){
