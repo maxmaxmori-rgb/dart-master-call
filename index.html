@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Dart Master Call v3.13</title>
+<title>Dart Master Call v3.14</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#050814">
 <style>
@@ -44,7 +44,7 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 </style>
 </head>
 <body>
-<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.13</span></div><div class="row"><button id="adminModeBtn" class="secondary" onclick="showAdmin()">🔒 Organizzatore</button><button id="tvBoardsBtn" class="secondary tvAccess" onclick="openDisplay('boards')">TV Pedane</button><button id="tvBracketBtn" class="secondary tvAccess" onclick="openDisplay('bracket')">TV Tabellone</button><button id="tvMixedBtn" class="secondary tvAccess" onclick="openDisplay('mixed')">TV Mista</button><button id="unlockBtn" class="purple" onclick="toggleTvLock()">🔐 Sblocca TV</button></div></header>
+<header id="topbar"><div class="brand">🎯 Dart <span>Master</span> Call <span class="tag">v3.14</span></div><div class="row"><button id="adminModeBtn" class="secondary" onclick="showAdmin()">🔒 Organizzatore</button><button id="tvBoardsBtn" class="secondary tvAccess" onclick="openDisplay('boards')">TV Pedane</button><button id="tvBracketBtn" class="secondary tvAccess" onclick="openDisplay('bracket')">TV Tabellone</button><button id="tvMixedBtn" class="secondary tvAccess" onclick="openDisplay('mixed')">TV Mista</button><button id="unlockBtn" class="purple" onclick="toggleTvLock()">🔐 Sblocca TV</button></div></header>
 <main id="admin">
 <div class="card"><b>Collegamento torneo</b><label>Codice torneo</label><input id="room" value="BARMAGIC" oninput="saveRoom()"><button class="blue" onclick="connectRoom()">Collega</button><span id="conn" class="small">Non collegato</span></div>
 <div class="nav"><button id="tabDashboard" class="active" onclick="setTab('dashboard')">Dashboard</button><button id="tabPlayers" onclick="setTab('players')">Giocatori</button><button id="tabBracket" onclick="setTab('bracket')">Tabellone</button><button id="tabBoards" onclick="setTab('boards')">Pedane</button></div>
@@ -56,7 +56,7 @@ label{display:block;color:var(--muted);font-size:12px;margin:8px 0 4px}.card{bac
 <div style="min-width:210px;flex:1"><label>Tipo tabellone</label><select id="bracketType" onchange="setBracketType()"><option value="single">Eliminazione diretta</option><option value="double" selected>Doppia eliminazione</option></select></div>
 <div style="align-self:end"><button class="green" onclick="generateBracket()">Genera</button><button class="purple" onclick="rebuildBracket()">Rigenera mantenendo giocatori</button><button class="red" onclick="resetBracket()">Reset</button></div>
 </div></div>
-<div class="card"><b>Partite da chiamare</b><div class="small">Solo le partite realmente pronte, in ordine numerico dalla 1 alla 30. Puoi scegliere il vincitore direttamente da qui.</div><div id="callQueueView"></div></div>
+<div class="card"><b>Partite da chiamare</b><div class="small">Solo le partite realmente pronte, in ordine numerico crescente. Puoi scegliere il vincitore direttamente da qui.</div><div id="callQueueView"></div></div>
 <div class="card"><button class="secondary" onclick="toggleFullBracket()">Mostra/Nascondi tabellone completo</button><div id="fullBracketWrap" class="hidden"><div id="bracketView"></div></div></div>
 <div class="card"><b>Posizioni finali ed eliminati</b><div id="placementsView"></div></div>
 </section>
@@ -71,7 +71,7 @@ const $=id=>document.getElementById(id);let app,db,roomRef,state=defaultState(),
 function defaultBoards(){return Array.from({length:6},(_,i)=>({id:i+1,status:"free",p1:"",p2:"",matchKey:null,calledAt:0,playingAt:0}))}
 function defaultState(){return {players:[],boardCount:6,callSeconds:15,displayMode:"mixed",boards:defaultBoards(),lastCall:null,bracketSize:16,bracketType:"double",bracket:null}}
 function hydrateBracket(b){
-  if(!b||!b.matches)return b;b.placements=b.placements||[];b.wins=b.wins||{};
+  if(!b||!b.matches)return b;b.placements=b.placements||[];b.wins=b.wins||{};b.format=b.format||"legacy";
 
   // Firebase salva winnerRounds/loserRounds come copie separate.
   // Qui le ricolleghiamo sempre agli oggetti canonici dentro matches.
@@ -201,22 +201,18 @@ window.assignMatchToBoard=(matchKey,bi)=>{
 }
 window.setBracketSize=()=>push({bracketSize:+$("bracketSize").value});window.setBracketType=()=>push({bracketType:$("bracketType").value});window.generateBracket=()=>{
   state.bracket=hydrateBracket(makeBracket(state.players,state.bracketSize,state.bracketType));
-  if(state.bracket?.type==="double"){
-    const expected={
-      1:[13,"p1",9,"p1"],2:[13,"p2",9,"p2"],3:[14,"p1",10,"p1"],4:[14,"p2",10,"p2"],
-      5:[15,"p1",11,"p1"],6:[15,"p2",11,"p2"],7:[16,"p1",12,"p1"],8:[16,"p2",12,"p2"],
-      13:[23,"p1",20,"p2"],14:[23,"p2",19,"p2"],15:[24,"p1",18,"p2"],16:[24,"p2",17,"p2"],
-      23:[28,"p1",25,"p2"],24:[28,"p2",26,"p2"],28:[30,"p1",29,"p2"]
-    };
-    const bad=Object.entries(expected).filter(([n,r])=>{
-      const m=state.bracket.matches["M"+n];
-      return m?.winTo?.key!=="M"+r[0]||m?.winTo?.slot!==r[1]||m?.loseTo?.key!=="M"+r[2]||m?.loseTo?.slot!==r[3];
-    });
-    if(bad.length)alert("Errore interno mappa: "+bad.map(x=>x[0]).join(", "));
+  if(!state.bracket)return;
+
+  const broken=Object.values(state.bracket.matches||{}).filter(m=>
+    (m.winTo&&!state.bracket.matches[m.winTo.key])||
+    (m.loseTo&&!state.bracket.matches[m.loseTo.key])
+  );
+  if(broken.length){
+    alert("Errore interno collegamenti: "+broken.map(m=>m.number).join(", "));
   }
   save()
 };window.rebuildBracket=()=>{if(confirm("Rigenerare il tabellone mantenendo i giocatori? I risultati verranno cancellati.")){state.bracket=hydrateBracket(makeBracket(state.players,state.bracketSize,state.bracketType));save()}};window.resetAll=()=>{if(confirm("Reset completo?"))set(roomRef,defaultState())}
-function newMatch(n){return {key:"M"+n,id:String(n),number:n,p1:"",p2:"",winner:null,loser:null,status:"waiting",winTo:null,loseTo:null}}
+function newMatch(n){return {key:"M"+n,id:String(n),number:n,p1:"",p2:"",winner:null,loser:null,status:"waiting",winTo:null,loseTo:null,eliminationPosition:null,roundLabel:""}}
 function setRoute(m,kind,to,slot){m[kind==="win"?"winTo":"loseTo"]={key:"M"+to,slot}}
 function putPlayer(b,route,player){
   if(!route||!player)return;
@@ -235,15 +231,8 @@ function addWin(b,player){
   b.wins[player]=(b.wins[player]||0)+1;
 }
 function placementForLoss(matchNumber,type){
-  if(type==="single")return null;
-  if([9,10,11,12].includes(matchNumber))return 13;
-  if([17,18,19,20].includes(matchNumber))return 9;
-  if([21,22].includes(matchNumber))return 7;
-  if([25,26].includes(matchNumber))return 5;
-  if(matchNumber===27)return 4;
-  if(matchNumber===29)return 3;
-  if(matchNumber===30)return 2;
-  return null;
+  const match=state.bracket?.matches?.["M"+matchNumber];
+  return match?.eliminationPosition||null;
 }
 function recordPlacement(b,player,position,matchNumber){
   if(!player||player==="BYE"||!position)return;
@@ -266,7 +255,7 @@ function routeMatchResult(b,m,winner,loser){
     winnerTo:m.winTo?m.winTo.key:null,
     loserTo:m.loseTo?m.loseTo.key:null
   };
-  if(m.number===30)b.champion=winner;
+
 }
 function completeMatch(b,m,winner,automatic=false){
   if(!m||m.winner||!winner)return false;
@@ -274,16 +263,18 @@ function completeMatch(b,m,winner,automatic=false){
   m.winner=winner;
   m.loser=loser;
   m.status="done";
+
   if(!automatic){
     releaseBoard(m.key);
     addWin(b,winner);
   }
+
   routeMatchResult(b,m,winner,loser);
 
-  const position=placementForLoss(m.number,b.type);
+  const position=m.eliminationPosition||null;
   if(position)recordPlacement(b,loser,position,m.number);
 
-  if(m.number===30){
+  if(m===b.final){
     b.champion=winner;
     recordPlacement(b,winner,1,m.number);
   }
@@ -302,49 +293,210 @@ function autoAdvanceByes(b){
     });
   }
 }
-function makeDouble16(players){
-  const b={size:16,type:"double",matches:{},winnerRounds:[],loserRounds:[],final:null,champion:null,placements:[],wins:{}};
-  for(let n=1;n<=30;n++)b.matches["M"+n]=newMatch(n);
-  const M=n=>b.matches["M"+n];
-  const seed=[...players].slice(0,16);while(seed.length<16)seed.push("BYE");
-  const pairs=[[0,15],[7,8],[4,11],[2,12],[3,13],[5,10],[6,9],[1,14]];
-  pairs.forEach((p,i)=>{M(i+1).p1=seed[p[0]];M(i+1).p2=seed[p[1]];updateReady(M(i+1))});
-  const routes={
-    1:[13,"p1",9,"p1"],2:[13,"p2",9,"p2"],3:[14,"p1",10,"p1"],4:[14,"p2",10,"p2"],
-    5:[15,"p1",11,"p1"],6:[15,"p2",11,"p2"],7:[16,"p1",12,"p1"],8:[16,"p2",12,"p2"],
-    9:[17,"p1",null,null],10:[18,"p1",null,null],11:[19,"p1",null,null],12:[20,"p1",null,null],
-    13:[23,"p1",20,"p2"],14:[23,"p2",19,"p2"],15:[24,"p1",18,"p2"],16:[24,"p2",17,"p2"],
-    17:[21,"p1",null,null],18:[21,"p2",null,null],19:[22,"p1",null,null],20:[22,"p2",null,null],
-    21:[25,"p1",null,null],22:[26,"p1",null,null],23:[28,"p1",25,"p2"],24:[28,"p2",26,"p2"],
-    25:[27,"p1",null,null],26:[27,"p2",null,null],27:[29,"p1",null,null],28:[30,"p1",29,"p2"],29:[30,"p2",null,null]
+
+function makeSeedOrder(size){
+  // Ordine bilanciato: 1-N, N/2-(N/2+1), ecc.
+  let order=[0,1];
+  while(order.length<size){
+    const nextSize=order.length*2;
+    const expanded=[];
+    order.forEach(x=>{
+      expanded.push(x);
+      expanded.push(nextSize-1-x);
+    });
+    order=expanded;
+  }
+  return order;
+}
+
+function makeDoubleBracket(players,size){
+  const k=Math.log2(size);
+  const b={
+    size,type:"double",matches:{},
+    winnerRounds:[],loserRounds:[],
+    final:null,champion:null,placements:[],wins:{},
+    format:"generic-double-v1"
   };
-  Object.entries(routes).forEach(([n,r])=>{setRoute(M(+n),"win",r[0],r[1]);if(r[2])setRoute(M(+n),"lose",r[2],r[3])});
-  b.winnerRounds=[[1,2,3,4,5,6,7,8],[13,14,15,16],[23,24],[28]].map(r=>r.map(M));
-  b.loserRounds=[[9,10,11,12],[17,18,19,20],[21,22],[25,26],[27],[29]].map(r=>r.map(M));
-  b.final=M(30);
+
+  let num=1;
+  const makeRound=(count,label)=>{
+    const round=[];
+    for(let i=0;i<count;i++){
+      const m=newMatch(num++);
+      m.roundLabel=label;
+      b.matches[m.key]=m;
+      round.push(m);
+    }
+    return round;
+  };
+
+  // Sequenza identica come struttura al 16:
+  // W1, L1, W2, L2, L3, W3, L4, L5 ... Wk, L(2k-2), Finale.
+  const W=[];
+  const L=[];
+
+  W[0]=makeRound(size/2,"Vincenti 1");
+  L[0]=makeRound(size/4,"Perdenti 1");
+  W[1]=makeRound(size/4,"Vincenti 2");
+  L[1]=makeRound(size/4,"Perdenti 2");
+
+  for(let r=3;r<=k;r++){
+    L[2*r-5]=makeRound(size/Math.pow(2,r-1),`Perdenti ${2*r-4}`);
+    W[r-1]=makeRound(size/Math.pow(2,r),`Vincenti ${r}`);
+    L[2*r-4]=makeRound(size/Math.pow(2,r),`Perdenti ${2*r-3}`);
+  }
+
+  // Ultimo turno perdenti, con il perdente della finale vincenti.
+  const lastLowerIndex=2*k-3;
+  if(!L[lastLowerIndex]){
+    L[lastLowerIndex]=makeRound(1,`Perdenti ${lastLowerIndex+1}`);
+  }
+
+  const GF=makeRound(1,"Finale")[0];
+  b.final=GF;
+  b.winnerRounds=W;
+  b.loserRounds=L.filter(Boolean);
+
+  // Inserimento giocatori con BYE.
+  const seed=[...players].slice(0,size);
+  while(seed.length<size)seed.push("BYE");
+  const order=makeSeedOrder(size);
+  const arranged=order.map(i=>seed[i]??"BYE");
+  W[0].forEach((m,i)=>{
+    m.p1=arranged[i*2];
+    m.p2=arranged[i*2+1];
+    updateReady(m);
+  });
+
+  // Vincitori W1 -> W2; perdenti W1 accoppiati in L1.
+  W[0].forEach((m,i)=>{
+    setRoute(m,"win",W[1][Math.floor(i/2)].number,i%2===0?"p1":"p2");
+    setRoute(m,"lose",L[0][Math.floor(i/2)].number,i%2===0?"p1":"p2");
+  });
+
+  // L1 -> L2.
+  L[0].forEach((m,i)=>{
+    setRoute(m,"win",L[1][i].number,"p1");
+  });
+
+  // Perdenti W2 entrano in L2 in ordine inverso.
+  W[1].forEach((m,i)=>{
+    const target=L[1][L[1].length-1-i];
+    setRoute(m,"lose",target.number,"p2");
+  });
+
+  // Collegamenti generici dai round 2 in poi.
+  for(let r=2;r<=k;r++){
+    const wRound=W[r-1];
+
+    // Vincitori del round W_r -> W_(r+1), oppure finale.
+    if(r<k){
+      wRound.forEach((m,i)=>{
+        setRoute(m,"win",W[r][Math.floor(i/2)].number,i%2===0?"p1":"p2");
+      });
+    }else{
+      setRoute(wRound[0],"win",GF.number,"p1");
+    }
+
+    if(r>=3){
+      // Even lower previous round reduces into odd lower round.
+      const prevEven=L[2*r-6];
+      const odd=L[2*r-5];
+      prevEven.forEach((m,i)=>{
+        setRoute(m,"win",odd[Math.floor(i/2)].number,i%2===0?"p1":"p2");
+      });
+
+      // Odd lower winners -> even lower same index.
+      const even=L[2*r-4];
+      odd.forEach((m,i)=>{
+        setRoute(m,"win",even[i].number,"p1");
+      });
+
+      // Losers W_r enter even lower in reverse order.
+      wRound.forEach((m,i)=>{
+        const target=even[even.length-1-i];
+        setRoute(m,"lose",target.number,"p2");
+      });
+    }
+  }
+
+  // Last lower winner -> grand final.
+  const finalLower=L[lastLowerIndex][0];
+  setRoute(finalLower,"win",GF.number,"p2");
+
+  // Posizioni nel girone perdenti, calcolate automaticamente.
+  let eliminated=0;
+  b.loserRounds.forEach(round=>{
+    eliminated+=round.length;
+    const position=size-eliminated+1;
+    round.forEach(m=>m.eliminationPosition=position);
+  });
+  GF.eliminationPosition=2;
+
   autoAdvanceByes(b);
   return b;
 }
+
 function makeSingleBracket(players,size){
-  const b={size,type:"single",matches:{},winnerRounds:[],loserRounds:[],final:null,champion:null,placements:[],wins:{}};
-  const seed=[...players].slice(0,size);while(seed.length<size)seed.push("BYE");
-  let num=1,prev=[];
+  const b={
+    size,type:"single",matches:{},
+    winnerRounds:[],loserRounds:[],
+    final:null,champion:null,placements:[],wins:{},
+    format:"generic-single-v1"
+  };
+
+  const seed=[...players].slice(0,size);
+  while(seed.length<size)seed.push("BYE");
+
+  let num=1;
   let count=size/2;
   while(count>=1){
     const round=[];
-    for(let i=0;i<count;i++){const m=newMatch(num++);b.matches[m.key]=m;round.push(m)}
-    b.winnerRounds.push(round);count=Math.floor(count/2);
+    for(let i=0;i<count;i++){
+      const m=newMatch(num++);
+      m.roundLabel=`Turno ${b.winnerRounds.length+1}`;
+      b.matches[m.key]=m;
+      round.push(m);
+    }
+    b.winnerRounds.push(round);
+    count=Math.floor(count/2);
   }
-  const first=b.winnerRounds[0];
-  for(let i=0;i<first.length;i++){first[i].p1=seed[i];first[i].p2=seed[size-1-i];updateReady(first[i])}
-  for(let r=0;r<b.winnerRounds.length-1;r++)b.winnerRounds[r].forEach((m,i)=>setRoute(m,"win",b.winnerRounds[r+1][Math.floor(i/2)].number,i%2===0?"p1":"p2"));
+
+  const order=makeSeedOrder(size);
+  const arranged=order.map(i=>seed[i]??"BYE");
+  b.winnerRounds[0].forEach((m,i)=>{
+    m.p1=arranged[i*2];
+    m.p2=arranged[i*2+1];
+    updateReady(m);
+  });
+
+  b.winnerRounds.forEach((round,r)=>{
+    const remainingAfter=size/Math.pow(2,r+1);
+    const position=remainingAfter+1;
+    round.forEach(m=>m.eliminationPosition=position);
+
+    if(r<b.winnerRounds.length-1){
+      round.forEach((m,i)=>{
+        setRoute(m,"win",b.winnerRounds[r+1][Math.floor(i/2)].number,i%2===0?"p1":"p2");
+      });
+    }
+  });
+
   b.final=b.winnerRounds[b.winnerRounds.length-1][0];
-  autoAdvanceByes(b);return b;
+  b.final.eliminationPosition=2;
+  autoAdvanceByes(b);
+  return b;
 }
+
 function makeBracket(players,size,type){
-  if(type==="double"&&Number(size)===16)return makeDouble16(players);
-  if(type==="double")alert("Il Doppio KO numerato è disponibile per 16 giocatori. Creo eliminazione diretta.");
-  return makeSingleBracket(players,Number(size));
+  size=Number(size);
+  if(![8,16,32,64,128].includes(size)){
+    alert("Formato non supportato.");
+    return null;
+  }
+  return type==="double"
+    ? makeDoubleBracket(players,size)
+    : makeSingleBracket(players,size);
 }
 function findMatch(key){return state.bracket?.matches?.[key]||null}
 function releaseBoard(matchKey){state.boards.forEach((bd,i)=>{if(bd.matchKey===matchKey)state.boards[i]={id:i+1,status:"free",p1:"",p2:"",matchKey:null,calledAt:0,playingAt:0}})}
@@ -376,7 +528,7 @@ function renderBracket(){
   }
   const html=bracketHtml(state.bracket,false);
   $("bracketView").innerHTML=html;
-  $("bracketMini").innerHTML=state.bracket?`<div class="small">Tabellone ${state.bracket.size} · ${state.bracket.type==="double"?"Doppio KO numerato 1–30":"eliminazione diretta"}</div>`:"<div class='small'>Nessun tabellone generato</div>"
+  $("bracketMini").innerHTML=state.bracket?`<div class="small">Tabellone ${state.bracket.size} · ${state.bracket.type==="double"?`Doppio KO ${state.bracket.size}`:`Eliminazione diretta ${state.bracket.size}`}</div>`:"<div class='small'>Nessun tabellone generato</div>"
 }
 function bracketHtml(b,tv){if(!b)return "<div class='small'>Genera il tabellone per visualizzarlo.</div>";let out=`<div class="bracketWrap"><div class="bracket">`;b.winnerRounds.forEach((r,ri)=>{out+=`<div class="round"><h3>🏆 Vincenti</h3>`+r.map((m,mi)=>matchSlot("W",ri,mi,m,tv)).join("")+`</div>`});if(b.type==="double")b.loserRounds.forEach((r,ri)=>{out+=`<div class="round"><h3 class="loserTitle">Perdenti</h3>`+r.map((m,mi)=>matchSlot("L",ri,mi,m,tv)).join("")+`</div>`});out+=`<div class="round"><h3>FINALE</h3><div class="slot ${b.final.status}"><b>Partita 30</b><div class="p" onclick="pickFinal('${escAttr(b.final.p1)}')">${esc(b.final.p1||"---")}</div><div class="p" onclick="pickFinal('${escAttr(b.final.p2)}')">${esc(b.final.p2||"---")}</div><div class="small">${b.champion?"🏆 "+esc(b.champion):b.final.status==="ready"?"⏳ pronta":"in attesa"}</div>${!tv&&b.final.status==="ready"&&!b.final.winner?freeBoardButtons(b.final.key):""}</div></div>`;return out+"</div></div>"}
 function matchSlot(side,ri,mi,m,tv){
